@@ -130,32 +130,12 @@
 <UserName>YWRtaW5pc3RyYXRvcg</UserName>
 <Password>cEA1NXcwcmQ</Password>
 <Comments></Comments>
-<File CompileType="Netlinx" Type="Module"><Identifier>RmsControlSystemMonitor</Identifier>
-<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\monitors\RmsControlSystemMonitor.axs</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="Netlinx" Type="Module"><Identifier>RmsTouchPanelMonitor</Identifier>
-<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\monitors\RmsTouchPanelMonitor.axs</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="None" Type="DUET"><Identifier>RmsClientGui_dr4_0_0</Identifier>
-<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\RmsClientGui_dr4_0_0.jar</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="None" Type="DUET"><Identifier>RmsNetLinxAdapter_dr4_0_0</Identifier>
-<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\RmsNetLinxAdapter_dr4_0_0.jar</FilePathName>
-<Comments></Comments>
-</File>
 <File CompileType="None" Type="Include"><Identifier>RmsApi</Identifier>
 <FilePathName>lib\RMS\includes\RmsApi.axi</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="None" Type="Include"><Identifier>RmsEventListener</Identifier>
 <FilePathName>lib\RMS\includes\RmsEventListener.axi</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="None" Type="Include"><Identifier>RmsGuiApi</Identifier>
-<FilePathName>lib\RMS\includes\RmsGuiApi.axi</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="None" Type="Include"><Identifier>RmsSchedulingApi</Identifier>
@@ -187,6 +167,18 @@
 </DeviceMap>
 <DeviceMap DevAddr="dvTPGCTraining"><DevName>dvTPGCTraining</DevName>
 </DeviceMap>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsControlSystemMonitor</Identifier>
+<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\monitors\RmsControlSystemMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsTouchPanelMonitor</Identifier>
+<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\monitors\RmsTouchPanelMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="DUET"><Identifier>RmsNetLinxAdapter_dr4_0_0</Identifier>
+<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\RmsNetLinxAdapter_dr4_0_0.jar</FilePathName>
+<Comments></Comments>
 </File>
 </System>
 </Project>
