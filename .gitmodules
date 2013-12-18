@@ -1,3 +1,6 @@
-[submodule "lib/RMS"]
-	path = lib/RMS
+[submodule "lib/rms-tools"]
+	path = lib/rms-tools
+	url = https://github.com/AMXAUNZ/rms-tools.git
+[submodule "lib/rms-sdk"]
+	path = lib/rms-sdk
 	url = https://github.com/KimBurgess/rms-sdk.git

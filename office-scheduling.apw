@@ -131,53 +131,39 @@
 <Password>cEA1NXcwcmQ</Password>
 <Comments></Comments>
 <File CompileType="None" Type="Include"><Identifier>RmsApi</Identifier>
-<FilePathName>lib\RMS\includes\RmsApi.axi</FilePathName>
+<FilePathName>lib\rms-sdk\includes\RmsApi.axi</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="None" Type="Include"><Identifier>RmsEventListener</Identifier>
-<FilePathName>lib\RMS\includes\RmsEventListener.axi</FilePathName>
+<FilePathName>lib\rms-sdk\includes\RmsEventListener.axi</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="None" Type="Include"><Identifier>RmsSchedulingApi</Identifier>
-<FilePathName>lib\RMS\includes\RmsSchedulingApi.axi</FilePathName>
+<FilePathName>lib\rms-sdk\includes\RmsSchedulingApi.axi</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="None" Type="Include"><Identifier>RmsSchedulingEventListener</Identifier>
-<FilePathName>lib\RMS\includes\RmsSchedulingEventListener.axi</FilePathName>
+<FilePathName>lib\rms-sdk\includes\RmsSchedulingEventListener.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsControlSystemMonitor</Identifier>
+<FilePathName>lib\rms-sdk\monitors\RmsControlSystemMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsTouchPanelMonitor</Identifier>
+<FilePathName>lib\rms-sdk\monitors\RmsTouchPanelMonitor.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="DUET"><Identifier>RmsNetLinxAdapter_dr4_0_0</Identifier>
+<FilePathName>lib\rms-sdk\RmsNetLinxAdapter_dr4_0_0.jar</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="Netlinx" Type="MasterSrc"><Identifier>office-scheduling</Identifier>
 <FilePathName>office-scheduling.axs</FilePathName>
 <Comments></Comments>
 </File>
-<File CompileType="None" Type="TP4"><Identifier>600x1024-Scheduling</Identifier>
-<FilePathName>ui\600x1024-Scheduling.TP4</FilePathName>
-<Comments></Comments>
-<DeviceMap DevAddr="dvTPSydBoardroom"><DevName>dvTPSydBoardroom</DevName>
-</DeviceMap>
-<DeviceMap DevAddr="dvTPSydTraining"><DevName>dvTPSydTraining</DevName>
-</DeviceMap>
-</File>
-<File CompileType="None" Type="TP4"><Identifier>800x480-Scheduling</Identifier>
-<FilePathName>ui\800x480-Scheduling.TP4</FilePathName>
-<Comments></Comments>
-<DeviceMap DevAddr="dvTPGCBoardroom"><DevName>dvTPGCBoardroom</DevName>
-</DeviceMap>
-<DeviceMap DevAddr="dvTPGCMeeting"><DevName>dvTPGCMeeting</DevName>
-</DeviceMap>
-<DeviceMap DevAddr="dvTPGCTraining"><DevName>dvTPGCTraining</DevName>
-</DeviceMap>
-</File>
-<File CompileType="Netlinx" Type="Module"><Identifier>RmsControlSystemMonitor</Identifier>
-<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\monitors\RmsControlSystemMonitor.axs</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="Netlinx" Type="Module"><Identifier>RmsTouchPanelMonitor</Identifier>
-<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\monitors\RmsTouchPanelMonitor.axs</FilePathName>
-<Comments></Comments>
-</File>
-<File CompileType="None" Type="DUET"><Identifier>RmsNetLinxAdapter_dr4_0_0</Identifier>
-<FilePathName>..\..\Events\Integrate 2013\NOC\lib\RMS\RmsNetLinxAdapter_dr4_0_0.jar</FilePathName>
+<File CompileType="None" Type="TP4"><Identifier>scheduling</Identifier>
+<FilePathName>ui\scheduling.TP4</FilePathName>
 <Comments></Comments>
 </File>
 </System>
