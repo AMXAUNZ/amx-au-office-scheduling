@@ -21,53 +21,53 @@ define_function char[32] fuzzyTime(long minutes) {
 	stack_var char ret[32];
 
 	select {
-		active (minutes <= 3 * TIME_MINUTE): {
-			ret = 'now';
+		active (minutes <= 1 * TIME_MINUTE): {
+			ret = '1 minute';
 		}
 		active (minutes <= 25 * TIME_MINUTE): {
-			ret = "'in ', itoa(minutes), ' minutes'";
+			ret = "itoa(minutes), ' minutes'";
 		}
 		active (minutes <= 40 * TIME_MINUTE): {
-			ret = 'in half an hour';
+			ret = 'half an hour';
 		}
 		active (minutes < 80 * TIME_MINUTE): {
-			ret = 'in 1 hour';
+			ret = '1 hour';
 		}
 		active (minutes <  105 * TIME_MINUTE): {
-			ret = 'in 1 and a half hours';
+			ret = '1 and a half hours';
 		}
 		active (minutes < 2 * TIME_HOUR): {
-			ret = 'in 2 hours';
+			ret = '2 hours';
 		}
 		active (minutes < 20 * TIME_HOUR): {
-			ret = "'in ', itoa(minutes / TIME_HOUR), ' hours'";
+			ret = "itoa(minutes / TIME_HOUR), ' hours'";
 		}
 		active (minutes < 30 * TIME_HOUR): {
-			ret = 'in 1 day';
+			ret = '1 day';
 		}
 		active (minutes < 40 * TIME_HOUR): {
-			ret = 'in 1 and a half days';
+			ret = '1 and a half days';
 		}
 		active (minutes < 2 * TIME_DAY): {
-			ret = 'in 2 days';
+			ret = '2 days';
 		}
 		active (minutes < 30 * TIME_DAY): {
-			ret = "'in ', itoa(minutes / TIME_DAY), ' days'";
+			ret = "itoa(minutes / TIME_DAY), ' days'";
 		}
 		active (minutes < 40 * TIME_MONTH): {
-			ret = 'in 1 month';
+			ret = '1 month';
 		}
 		active (minutes < 50 * TIME_DAY): {
-			ret = 'in 1 and a half months';
+			ret = '1 and a half months';
 		}
 		active (minutes < 2 * TIME_MONTH): {
-			ret = 'in 2 months';
+			ret = '2 months';
 		}
-		active (minutes < 12 * TIME_MONTH): {
-			ret = "'in ', itoa(minutes / TIME_MONTH), ' months'";
+		active (minutes <= 12 * TIME_MONTH): {
+			ret = "itoa(minutes / TIME_MONTH), ' months'";
 		}
 		active (1): {
-			ret = 'a long time from now';
+			ret = 'more than a year';
 		}
 	}
 

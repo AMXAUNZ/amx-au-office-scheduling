@@ -11,6 +11,7 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #DEFINE INCLUDE_SCHEDULING_CREATE_RESPONSE_CALLBACK
 
 
+#INCLUDE 'TimeUtil';
 #INCLUDE 'RmsAssetLocationTracker';
 #INCLUDE 'TpApi';
 #INCLUDE 'RmsApi';
@@ -58,6 +59,9 @@ volatile RmsEventBookingResponse nextBooking;
  * Initialise module variables that cannot be assisgned at compile time.
  */
 define_function init() {
+	clearActiveMeeting();
+	clearNextMeeting();
+
 	setLocationTrackerAsset(RmsDevToString(dvTp));
 }
 
@@ -65,8 +69,71 @@ define_function init() {
  * Render the appropriate popups and page elements for the current system state.
  */
 define_function redraw() {
-	// TODO
-	setPage(dvTp, PAGE_AVAILABLE);
+	select {
+		
+		// Meeting approaching
+		active (!inUse && nextBooking.minutesUntilStart <= 5): {
+			setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, nextBooking.subject);
+			setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTime(nextBooking.minutesUntilStart)");
+			setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
+			// TODO show attendees
+		
+			showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
+			setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+		}
+
+		// Room in use
+		active (inUse): {
+			setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
+			setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
+		
+			select {
+			
+				// Active meeting info
+				active (activeBooking.remainingMinutes > 5): {
+					setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
+					// TODO set attendees
+					showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
+				}
+				
+				// Book next functionality
+				active (nextBooking.minutesUntilStart > 10): {
+					stack_var char availability[512];
+					if (nextBooking.startDate == ldate) {
+						availability = fuzzyTime(nextBooking.minutesUntilStart);
+					} else {
+						availability = 'the rest of the day';
+					}
+					setButtonText(dvTp, BTN_AVAILABILITY_WINDOW, "'The room is available for ', availability, ' following the current meeting.'");
+					showPopupEx(dvTp, POPUP_BOOK_NEXT, PAGE_IN_USE);
+				}
+				
+				// Back to back meetings
+				active (1): {
+					setButtonText(dvTp, BTN_BACK_TO_BACK_INFO, "'The room is reserved for "', nextBooking.subject, '" directly following this.'");
+					showPopupEx(dvTp, POPUP_BACK_TO_BACK, PAGE_IN_USE);
+				}
+			
+			}
+			
+			setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+		}
+		
+		// Room available
+		active (1): {
+			stack_var char nextInfoText[512];
+			
+			if (nextBooking.startDate == ldate) {
+				nextInfoText = "'"', nextBooking.subject, '" begins in ', fuzzyTime(nextBooking.minutesUntilStart), '.'";
+			} else {
+				nextInfoText = 'No bookings currently scheduled for the rest of the day.';
+			}
+			setButtonText(dvTp, BTN_NEXT_INFO, nextInfoText);
+			
+			setPageAnimated(dvTp, PAGE_AVAILABLE, 'fade', 0, 20);
+		}
+	
+	}
 }
 
 /**
@@ -129,6 +196,26 @@ define_function setNextMeetingInfo(RmsEventBookingResponse booking) {
 	redraw();
 }
 
+/**
+ * Clears the contents of the currently tracked active meeting.
+ *
+ */
+define_function clearActiveMeeting() {
+	stack_var RmsEventBookingResponse blank;
+	blank.minutesUntilStart = $ffffffff;
+	setActiveMeetingInfo(blank);
+}
+
+/**
+ * Clears the contents of the currently tracked active meeting.
+ *
+ */
+define_function clearNextMeeting() {
+	stack_var RmsEventBookingResponse blank;
+	blank.minutesUntilStart = $ffffffff;
+	setNextMeetingInfo(blank);
+}
+
 
 // RMS callbacks
 
@@ -171,6 +258,7 @@ define_function RmsEventSchedulingActiveUpdated(char bookingId[],
 define_function RmsEventSchedulingEventEnded(CHAR bookingId[],
 		RmsEventBookingResponse eventBookingResponse) {
 	if (eventBookingResponse.location == locationTracker.location.id) {
+		clearActiveMeeting();
 		setInUse(false);
 	}
 }
@@ -178,6 +266,10 @@ define_function RmsEventSchedulingEventEnded(CHAR bookingId[],
 define_function RmsEventSchedulingEventStarted(CHAR bookingId[],
 		RmsEventBookingResponse eventBookingResponse) {
 	if (eventBookingResponse.location == locationTracker.location.id) {
+		setActiveMeetingInfo(eventBookingResponse);
+		if (activeBooking.bookingId == nextBooking.bookingId) {
+			clearNextMeeting();
+		}
 		setInUse(true);
 	}
 }
@@ -204,7 +296,7 @@ define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 		char responseText[],
 		RmsEventBookingResponse eventBookingResponse) {
 	if (eventBookingResponse.location = locationTracker.location.id) {
-		// TODO
+		// TODO handle create feedback
 	}
 }
 
