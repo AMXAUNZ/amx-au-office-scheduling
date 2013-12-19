@@ -120,16 +120,20 @@
 <SysID>0</SysID>
 <TransSerial>COM3,38400,8,None,1,None</TransSerial>
 <TransModem></TransModem>
-<TransTCPIP>192.168.7.11:1319:1:office-scheduling:administrator:p@55w0rd</TransTCPIP>
+<TransTCPIP>192.168.3.37:1319:1:Dev NI::</TransTCPIP>
 <VirtualNetLinxMasterFlag>0</VirtualNetLinxMasterFlag>
 <VNMRestoreIPSettings>192.168.1.3:1319:1:Temp::</VNMRestoreIPSettings>
 <VNMSystemID>1</VNMSystemID>
 <VNMIPAddress>192.168.0.230</VNMIPAddress>
 <VNMMaskAddress>255.255.255.0</VNMMaskAddress>
 <IsAuthenticationEnabled>0</IsAuthenticationEnabled>
-<UserName>YWRtaW5pc3RyYXRvcg</UserName>
-<Password>cEA1NXcwcmQ</Password>
+<UserName></UserName>
+<Password></Password>
 <Comments></Comments>
+<File CompileType="None" Type="Include"><Identifier>TimeUtil</Identifier>
+<FilePathName>include\TimeUtil.axi</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="None" Type="Include"><Identifier>RmsApi</Identifier>
 <FilePathName>lib\rms-sdk\includes\RmsApi.axi</FilePathName>
 <Comments></Comments>
@@ -156,6 +160,34 @@
 </File>
 <File CompileType="None" Type="DUET"><Identifier>RmsNetLinxAdapter_dr4_0_0</Identifier>
 <FilePathName>lib\rms-sdk\RmsNetLinxAdapter_dr4_0_0.jar</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>RmsAssetLocationTracker</Identifier>
+<FilePathName>lib\rms-tools\RmsAssetLocationTracker.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>RmsExtendedApi</Identifier>
+<FilePathName>lib\rms-tools\RmsExtendedApi.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>RmsExtendedEventListener</Identifier>
+<FilePathName>lib\rms-tools\RmsExtendedEventListener.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>RmsSchedulingEventLogger</Identifier>
+<FilePathName>lib\rms-tools\RmsSchedulingEventLogger.axs</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>TpApi</Identifier>
+<FilePathName>lib\tp\TpApi.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>TpEventListener</Identifier>
+<FilePathName>lib\tp\TpEventListener.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="Netlinx" Type="Module"><Identifier>SchedulingUI</Identifier>
+<FilePathName>module\SchedulingUI.axs</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="Netlinx" Type="MasterSrc"><Identifier>office-scheduling</Identifier>
