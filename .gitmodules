@@ -4,3 +4,6 @@
 [submodule "lib/rms-sdk"]
 	path = lib/rms-sdk
 	url = https://github.com/KimBurgess/rms-sdk.git
+[submodule "lib/ncl"]
+	path = lib/ncl
+	url = https://github.com/KimBurgess/netlinx-common-libraries.git
