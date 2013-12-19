@@ -22,12 +22,32 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 define_variable
 
 // Page names
-constant char BLANK_PAGE[] = 'blank';
-constant char CONNECTED_PAGE[] = 'connected';
-constant char CONNECTING_PAGE[] = 'connecting';
-constant char AVAILABLE_PAGE[] = 'available';
-constant char IN_USE_PAGE[] = 'inUse';
+constant char PAGE_BLANK[] = 'blank';
+constant char PAGE_CONNECTED[] = 'connected';
+constant char PAGE_CONNECTING[] = 'connecting';
+constant char PAGE_AVAILABLE[] = 'available';
+constant char PAGE_IN_USE[] = 'inUse';
 
+// Popups
+constant char POPUP_CREATE[] = 'create';
+constant char POPUP_TODAY[] = 'today';
+constant char POPUP_ACTIVE_INFO[] = 'activeInfo';
+constant char POPUP_BACK_TO_BACK[] = 'backToBack';
+constant char POPUP_BOOK_NEXT[] = 'bookNext';
+
+// Button addresses
+constant integer BTN_MEET_NOW = 1;
+constant integer BTN_NEXT_INFO = 2;
+constant integer BTN_ACTIVE_MEETING_NAME = 3;
+constant integer BTN_ACTIVE_MEETING_TIMER = 4;
+constant integer BTN_TIME_SELECT_10 = 5;
+constant integer BTN_TIME_SELECT_20 = 6;
+constant integer BTN_TIME_SELECT_30 = 7;
+constant integer BTN_TIME_SELECT_60 = 8;
+constant integer BTN_ACTIVE_TIMES = 9;
+constant integer BTN_BACK_TO_BACK_INFO = 10;
+constant integer BTN_AVAILABILITY_WINDOW = 11;
+constant integer BTN_BOOK_NEXT = 12;
 
 volatile char inUse;
 volatile RmsEventBookingResponse activeBooking;
@@ -46,7 +66,7 @@ define_function init() {
  */
 define_function redraw() {
 	// TODO
-	setPage(dvTp, AVAILABLE_PAGE);
+	setPage(dvTp, PAGE_AVAILABLE);
 }
 
 /**
@@ -58,9 +78,9 @@ define_function setOnline(char isOnline) {
 	if (isOnline) {
 
 		cancel_wait 'systemOnlineAnimSequence';
-		setPageAnimated(dvTp, CONNECTED_PAGE, 'fade', 0, 2);
+		setPageAnimated(dvTp, PAGE_CONNECTED, 'fade', 0, 2);
 		wait 10 'systemOnlineAnimSequence' {
-			setPageAnimated(dvTp, BLANK_PAGE, 'fade', 0, 10);
+			setPageAnimated(dvTp, PAGE_BLANK, 'fade', 0, 10);
 			wait 10 'systemOnlineAnimSequence' {
 				redraw();
 			}
@@ -69,9 +89,9 @@ define_function setOnline(char isOnline) {
 	} else {
 
 		cancel_wait 'systemOnlineAnimSequence';
-		setPageAnimated(dvTp, BLANK_PAGE, 'fade', 0, 10);
+		setPageAnimated(dvTp, PAGE_BLANK, 'fade', 0, 10);
 		wait 10 'systemOnlineAnimSequence' {
-			setPageAnimated(dvTp, CONNECTING_PAGE, 'fade', 0, 20);
+			setPageAnimated(dvTp, PAGE_CONNECTING, 'fade', 0, 20);
 		}
 
 	}
