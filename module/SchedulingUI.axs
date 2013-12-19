@@ -50,6 +50,9 @@ constant integer BTN_BACK_TO_BACK_INFO = 10;
 constant integer BTN_AVAILABILITY_WINDOW = 11;
 constant integer BTN_BOOK_NEXT = 12;
 
+// Maximum possible value to be stored in minutesUntilX variables
+constant long MAX_MINUTES = $ffffffff;
+
 volatile char inUse;
 volatile RmsEventBookingResponse activeBooking;
 volatile RmsEventBookingResponse nextBooking;
@@ -70,14 +73,14 @@ define_function init() {
  */
 define_function redraw() {
 	select {
-		
+
 		// Meeting approaching
 		active (!inUse && nextBooking.minutesUntilStart <= 5): {
 			setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, nextBooking.subject);
 			setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTime(nextBooking.minutesUntilStart)");
 			setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
 			// TODO show attendees
-		
+
 			showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
 			setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
 		}
@@ -86,16 +89,16 @@ define_function redraw() {
 		active (inUse): {
 			setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
 			setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
-		
+
 			select {
-			
+
 				// Active meeting info
 				active (activeBooking.remainingMinutes > 5): {
 					setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
 					// TODO set attendees
 					showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
 				}
-				
+
 				// Book next functionality
 				active (nextBooking.minutesUntilStart > 10): {
 					stack_var char availability[512];
@@ -107,32 +110,32 @@ define_function redraw() {
 					setButtonText(dvTp, BTN_AVAILABILITY_WINDOW, "'The room is available for ', availability, ' following the current meeting.'");
 					showPopupEx(dvTp, POPUP_BOOK_NEXT, PAGE_IN_USE);
 				}
-				
+
 				// Back to back meetings
 				active (1): {
 					setButtonText(dvTp, BTN_BACK_TO_BACK_INFO, "'The room is reserved for "', nextBooking.subject, '" directly following this.'");
 					showPopupEx(dvTp, POPUP_BACK_TO_BACK, PAGE_IN_USE);
 				}
-			
+
 			}
-			
+
 			setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
 		}
-		
+
 		// Room available
 		active (1): {
 			stack_var char nextInfoText[512];
-			
+
 			if (nextBooking.startDate == ldate) {
 				nextInfoText = "'"', nextBooking.subject, '" begins in ', fuzzyTime(nextBooking.minutesUntilStart), '.'";
 			} else {
 				nextInfoText = 'No bookings currently scheduled for the rest of the day.';
 			}
 			setButtonText(dvTp, BTN_NEXT_INFO, nextInfoText);
-			
+
 			setPageAnimated(dvTp, PAGE_AVAILABLE, 'fade', 0, 20);
 		}
-	
+
 	}
 }
 
@@ -192,6 +195,15 @@ define_function setActiveMeetingInfo(RmsEventBookingResponse booking) {
  *						data
  */
 define_function setNextMeetingInfo(RmsEventBookingResponse booking) {
+	
+	// As of SDK v4.1.14 the next active update events will fire when creating
+	// bookings before all the data is available. When valid data is coming
+	// in minutesUntilStart wil always be > 0. Handling this here just
+	// simplified things in the render() function.
+	if (booking.minutesUntilStart == 0) {
+		booking.minutesUntilStart = MAX_MINUTES;
+	}
+	
 	nextBooking = booking;
 	redraw();
 }
@@ -202,7 +214,7 @@ define_function setNextMeetingInfo(RmsEventBookingResponse booking) {
  */
 define_function clearActiveMeeting() {
 	stack_var RmsEventBookingResponse blank;
-	blank.minutesUntilStart = $ffffffff;
+	blank.minutesUntilStart = MAX_MINUTES;
 	setActiveMeetingInfo(blank);
 }
 
@@ -212,7 +224,7 @@ define_function clearActiveMeeting() {
  */
 define_function clearNextMeeting() {
 	stack_var RmsEventBookingResponse blank;
-	blank.minutesUntilStart = $ffffffff;
+	blank.minutesUntilStart = MAX_MINUTES;
 	setNextMeetingInfo(blank);
 }
 
