@@ -7,3 +7,6 @@
 [submodule "lib/ncl"]
 	path = lib/ncl
 	url = https://github.com/KimBurgess/netlinx-common-libraries.git
+[submodule "lib/tp"]
+	path = lib/tp
+	url = https://github.com/AMXAUNZ/touch-panel-library.git
