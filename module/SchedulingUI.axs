@@ -7,6 +7,7 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #DEFINE INCLUDE_SCHEDULING_ACTIVE_UPDATED_CALLBACK
 #DEFINE INCLUDE_SCHEDULING_EVENT_ENDED_CALLBACK
 #DEFINE INCLUDE_SCHEDULING_EVENT_STARTED_CALLBACK
+#DEFINE INCLUDE_SCHEDULING_EVENT_UPDATED_CALLBACK
 #DEFINE INCLUDE_SCHEDULING_CREATE_RESPONSE_CALLBACK
 
 
@@ -158,6 +159,24 @@ define_function RmsEventSchedulingEventStarted(CHAR bookingId[],
 		RmsEventBookingResponse eventBookingResponse) {
 	if (eventBookingResponse.location == locationTracker.location.id) {
 		setInUse(true);
+	}
+}
+
+define_function RmsEventSchedulingEventUpdated(CHAR bookingId[],
+		RmsEventBookingResponse eventBookingResponse) {
+	if (eventBookingResponse.location == locationTracker.location.id) {
+		// As of SDK v4.1.14 the active and next active update callbacks will
+		// not fire for up to a minute after event creations or modifications.
+		// The general update callback (this method) does however get called
+		// as soon as anything changes so we can force an update here to make
+		// sure we keep out UI as responsive as possible. This is however called
+		// for every event so the wait also acts as a run once to cut down on
+		// redundant queries.
+		cancel_wait 'forced update query';
+		wait 5 'forced update query' {
+			RmsBookingActiveRequest(locationTracker.location.id);
+			RmsBookingNextActiveRequest(locationTracker.location.id);
+		}
 	}
 }
 
