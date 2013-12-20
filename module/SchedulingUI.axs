@@ -41,14 +41,14 @@ constant integer BTN_MEET_NOW = 1;
 constant integer BTN_NEXT_INFO = 2;
 constant integer BTN_ACTIVE_MEETING_NAME = 3;
 constant integer BTN_ACTIVE_MEETING_TIMER = 4;
-constant integer BTN_TIME_SELECT_10 = 5;
-constant integer BTN_TIME_SELECT_20 = 6;
-constant integer BTN_TIME_SELECT_30 = 7;
-constant integer BTN_TIME_SELECT_60 = 8;
+constant integer BTN_TIME_SELECT[] = {5, 6, 7, 8};
 constant integer BTN_ACTIVE_TIMES = 9;
 constant integer BTN_BACK_TO_BACK_INFO = 10;
 constant integer BTN_AVAILABILITY_WINDOW = 11;
 constant integer BTN_BOOK_NEXT = 12;
+
+// Options available for 'meet now' and 'book next' inital meeting lengths
+constant integer BOOKING_REQUEST_LENGTHS[] = {10, 20, 30, 60};
 
 // Maximum possible value to be stored in minutesUntilX variables
 constant long MAX_MINUTES = $ffffffff;
@@ -56,6 +56,8 @@ constant long MAX_MINUTES = $ffffffff;
 volatile char inUse;
 volatile RmsEventBookingResponse activeBooking;
 volatile RmsEventBookingResponse nextBooking;
+
+volatile integer bookingRequestLength;
 
 
 /**
@@ -209,6 +211,37 @@ define_function renderBackToBack() {
 }
 
 /**
+ * Update the meeting length presented for selection based on the available
+ * time window.
+ */
+define_function updateAvailableBookingTimes() {
+	setButtonEnabled(dvTp, BTN_TIME_SELECT[1], (nextBooking.minutesUntilStart > 10));
+	setButtonFaded(dvTp, BTN_TIME_SELECT[1], (nextBooking.minutesUntilStart > 10));
+	
+	setButtonEnabled(dvTp, BTN_TIME_SELECT[2], (nextBooking.minutesUntilStart > 20));
+	setButtonFaded(dvTp, BTN_TIME_SELECT[2], (nextBooking.minutesUntilStart > 20));
+	
+	setButtonEnabled(dvTp, BTN_TIME_SELECT[3], (nextBooking.minutesUntilStart > 30));
+	setButtonFaded(dvTp, BTN_TIME_SELECT[3], (nextBooking.minutesUntilStart > 30));
+	
+	setButtonEnabled(dvTp, BTN_TIME_SELECT[4], (nextBooking.minutesUntilStart > 60));
+	setButtonFaded(dvTp, BTN_TIME_SELECT[4], (nextBooking.minutesUntilStart > 60));	
+}
+
+/**
+ * Set the legnth that will be utilised by ad-hoc booking requests.
+ */
+define_function setBookingRequestLength(integer minutes) {
+	stack_var integer i;
+	
+	for (i = 1; i <= length_array(BTN_TIME_SELECT); i++) {
+		[dvTp, BTN_TIME_SELECT[i]] = (BOOKING_REQUEST_LENGTHS[i] == minutes);
+	}
+	
+	bookingRequestLength = minutes;
+}
+
+/**
  * Sets the system state.
  *
  * @param	isOnLine	a boolean, true if we are good to go
@@ -274,6 +307,8 @@ define_function setNextMeetingInfo(RmsEventBookingResponse booking) {
 	}
 	
 	nextBooking = booking;
+	
+	updateAvailableBookingTimes();
 	redraw();
 }
 
@@ -400,6 +435,32 @@ data_event[dvTp] {
 
 	online: {
 		setOnline([vdvRMS, RMS_CHANNEL_CLIENT_REGISTERED]);
+	}
+
+}
+
+button_event[dvTp, BTN_MEET_NOW]
+button_event[dvTp, BTN_BOOK_NEXT] {
+
+	push: {
+		// Default to a 20 minute meeting, or if time doesn't allow fall back to
+		// 10 minutes
+		if (nextBooking.minutesUntilStart > BOOKING_REQUEST_LENGTHS[2]) {
+			setBookingRequestLength(BOOKING_REQUEST_LENGTHS[2]);
+		} else {
+			setBookingRequestLength(BOOKING_REQUEST_LENGTHS[1]);
+		}
+	}
+
+}
+
+
+button_event[dvTp, BTN_TIME_SELECT] {
+
+	push: {
+		stack_var integer i;
+		i = get_last(BTN_TIME_SELECT);
+		setBookingRequestLength(BOOKING_REQUEST_LENGTHS[i]);
 	}
 
 }
