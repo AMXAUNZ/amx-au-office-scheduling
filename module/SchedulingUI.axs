@@ -70,73 +70,142 @@ define_function init() {
 
 /**
  * Render the appropriate popups and page elements for the current system state.
+ * This should be called whenever our scheduling information updates.
  */
 define_function redraw() {
-	select {
 
-		// Meeting approaching
-		active (!inUse && nextBooking.minutesUntilStart <= 5): {
-			setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, nextBooking.subject);
-			setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTime(nextBooking.minutesUntilStart)");
-			setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
-			// TODO show attendees
+	// Throttle UI redraws to 100ms
+	// Placing this in a wait also enables us to ensure that we have had a
+	// chance to handle all relevent events and ensure we don't redraw with
+	// partial / incorrect data.
+	cancel_wait 'ui update';
+	wait 1 'ui update' {
 
-			showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
-			setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
-		}
-
-		// Room in use
-		active (inUse): {
-			setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
-			setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
-
-			select {
-
-				// Active meeting info
-				active (activeBooking.remainingMinutes > 5): {
-					setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
-					// TODO set attendees
-					showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
-				}
-
-				// Book next functionality
-				active (nextBooking.minutesUntilStart > 10): {
-					stack_var char availability[512];
-					if (nextBooking.startDate == ldate) {
-						availability = fuzzyTime(nextBooking.minutesUntilStart);
-					} else {
-						availability = 'the rest of the day';
-					}
-					setButtonText(dvTp, BTN_AVAILABILITY_WINDOW, "'The room is available for ', availability, ' following the current meeting.'");
-					showPopupEx(dvTp, POPUP_BOOK_NEXT, PAGE_IN_USE);
-				}
-
-				// Back to back meetings
-				active (1): {
-					setButtonText(dvTp, BTN_BACK_TO_BACK_INFO, "'The room is reserved for "', nextBooking.subject, '" directly following this.'");
-					showPopupEx(dvTp, POPUP_BACK_TO_BACK, PAGE_IN_USE);
-				}
-
+		select {
+	
+			// Meeting approaching
+			active (!inUse && nextBooking.minutesUntilStart <= 5): {
+				renderNextMeeting();
+			}
+			
+			// Room available
+			active (!inUse): {
+				renderRoomAvilable();
+			}
+	
+			// Room in use
+			active (inUse && activeBooking.remainingMinutes > 5): {
+				renderActiveMeeting();
+			}
+	
+			// Nearing end of current meeting and there's upcoming availability
+			active (inUse && (nextBooking.minutesUntilStart - activeBooking.remainingMinutes > 10)): {
+				renderBookNext();
+			}
+	
+			// Back to back meeting
+			active (inUse): {
+				renderBackToBack();
 			}
 
-			setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
-		}
-
-		// Room available
-		active (1): {
-			stack_var char nextInfoText[512];
-
-			if (nextBooking.startDate == ldate) {
-				nextInfoText = "'"', nextBooking.subject, '" begins in ', fuzzyTime(nextBooking.minutesUntilStart), '.'";
-			} else {
-				nextInfoText = 'No bookings currently scheduled for the rest of the day.';
+			// Ummmm...
+			active (1): {
+				amx_log(AMX_WARNING, 'Unexpected system state. Could not update UI');
 			}
-			setButtonText(dvTp, BTN_NEXT_INFO, nextInfoText);
-
-			setPageAnimated(dvTp, PAGE_AVAILABLE, 'fade', 0, 20);
+	
 		}
-
 	}
+}
+
+/**
+ * Set up the UI to display the 'room available' screen.
+ *
+ * Do not call this directly. If an update is required use redraw().
+ */
+define_function renderRoomAvilable() {
+	stack_var char nextInfoText[512];
+	
+	if (nextBooking.startDate == ldate) {
+		nextInfoText = "'"', nextBooking.subject, '" begins in ', fuzzyTime(nextBooking.minutesUntilStart), '.'";
+	} else {
+		nextInfoText = 'No bookings currently scheduled for the rest of the day.';
+	}
+
+	setButtonText(dvTp, BTN_NEXT_INFO, nextInfoText);
+
+	setPageAnimated(dvTp, PAGE_AVAILABLE, 'fade', 0, 20);
+}
+
+/**
+ * Set up the UI to display the next active meeting info.
+ *
+ * Do not call this directly. If an update is required use redraw().
+ */
+define_function renderNextMeeting() {
+	setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, nextBooking.subject);
+	setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTime(nextBooking.minutesUntilStart)");
+	setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
+
+	// TODO show attendees
+
+	showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
+
+	setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+}
+
+/**
+ * Set up the UI to display the active meeting info.
+ *
+ * Do not call this directly. If an update is required use redraw().
+ */
+define_function renderActiveMeeting() {
+	setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
+	setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
+	setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
+
+	// TODO set attendees
+
+	showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
+	
+	setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+}
+
+/**
+ * Set up the UI to display the 'book next' screen.
+ *
+ * Do not call this directly. If an update is required use redraw().
+ */
+define_function renderBookNext() {
+	stack_var char availability[512];
+	
+	if (nextBooking.startDate == ldate) {
+		availability = fuzzyTime(nextBooking.minutesUntilStart);
+	} else {
+		availability = 'the rest of the day';
+	}
+	
+	setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
+	setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
+	setButtonText(dvTp, BTN_AVAILABILITY_WINDOW, "'The room is available for ', availability, ' following the current meeting.'");
+
+	showPopupEx(dvTp, POPUP_BOOK_NEXT, PAGE_IN_USE);
+	
+	setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+}
+
+/**
+ * Set up the UI to display the 'back to back' screen.
+ *
+ * Do not call this directly. If an update is required use redraw().
+ */
+define_function renderBackToBack() {	
+	setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
+	setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
+	setButtonText(dvTp, BTN_BACK_TO_BACK_INFO, "'The room is reserved for "', nextBooking.subject, '" directly following this.'");
+	
+	showPopupEx(dvTp, POPUP_BACK_TO_BACK, PAGE_IN_USE);
+	
+	setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
 }
 
 /**
