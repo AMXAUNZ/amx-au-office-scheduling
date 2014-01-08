@@ -9,11 +9,13 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #DEFINE INCLUDE_SCHEDULING_EVENT_STARTED_CALLBACK
 #DEFINE INCLUDE_SCHEDULING_EVENT_UPDATED_CALLBACK
 #DEFINE INCLUDE_SCHEDULING_CREATE_RESPONSE_CALLBACK
+#DEFINE INCLUDE_TP_NFC_TAG_READ_CALLBACK
 
 
 #INCLUDE 'TimeUtil';
 #INCLUDE 'RmsAssetLocationTracker';
 #INCLUDE 'TpApi';
+#INCLUDE 'TPEventListener';
 #INCLUDE 'RmsApi';
 #INCLUDE 'RmsEventListener';
 #INCLUDE 'RmsSchedulingApi';
@@ -21,6 +23,14 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 
 
 define_variable
+
+// System states
+constant char STATE_OFFLINE = 1;
+constant char STATE_AVAILABLE = 2;
+constant char STATE_IN_USE = 3;
+constant char STATE_BOOKING_NEAR = 4;
+constant char STATE_BOOKING_ENDING = 5;
+constant char STATE_BOOKED_BACK_TO_BACK = 6;
 
 // Page names
 constant char PAGE_BLANK[] = 'blank';
@@ -71,143 +81,165 @@ define_function init() {
 }
 
 /**
- * Render the appropriate popups and page elements for the current system state.
- * This should be called whenever our scheduling information updates.
+ * Gets the current system / room booking state.
+ *
+ * @returns		an char representing one of the STATE_... constants
+ */
+define_function char getState() {
+	stack_var char state;
+
+	select {
+
+		// No connection to the RMS server
+		active (![vdvRMS, RMS_CHANNEL_CLIENT_REGISTERED]): {
+			state = STATE_OFFLINE;
+		}
+
+		// Meeting approaching
+		active (!inUse && nextBooking.minutesUntilStart <= 5): {
+			state = STATE_BOOKING_NEAR; 
+		}
+
+		// Room available
+		active (!inUse): {
+			state = STATE_AVAILABLE;
+		}
+
+		// Room in use
+		active (inUse && activeBooking.remainingMinutes > 5): {
+			state = STATE_IN_USE;
+		}
+
+		// Nearing end of current meeting and there's upcoming availability
+		active (inUse && (nextBooking.minutesUntilStart - activeBooking.remainingMinutes > 10)): {
+			state = STATE_BOOKING_ENDING;
+		}
+
+		// Back to back meeting
+		active (inUse): {
+			state = STATE_BOOKED_BACK_TO_BACK;
+		}
+
+		// Ummmm...
+		active (1): {
+			state = STATE_OFFLINE;
+			amx_log(AMX_ERROR, 'Unexpected system state.');
+		}
+
+	}
+	
+	return state;
+}
+
+/**
+ * Request a UI redraw. This should be called by every event that affects our
+ * system state;
  */
 define_function redraw() {
-
-	// Throttle UI redraws to 100ms
+	// Throttle UI renders to 100ms
 	// Placing this in a wait also enables us to ensure that we have had a
 	// chance to handle all relevent events and ensure we don't redraw with
 	// partial / incorrect data.
 	cancel_wait 'ui update';
 	wait 1 'ui update' {
+		render(getState());
+	}
+}
 
-		select {
+/**
+ * Render the appropriate popups and page elements for a passed system state.
+ *
+ * To trigger an update from other areas of code use redraw().
+ */
+define_function render(char state) {
+	switch (state) {
 	
-			// Meeting approaching
-			active (!inUse && nextBooking.minutesUntilStart <= 5): {
-				renderNextMeeting();
-			}
-			
-			// Room available
-			active (!inUse): {
-				renderRoomAvilable();
-			}
-	
-			// Room in use
-			active (inUse && activeBooking.remainingMinutes > 5): {
-				renderActiveMeeting();
-			}
-	
-			// Nearing end of current meeting and there's upcoming availability
-			active (inUse && (nextBooking.minutesUntilStart - activeBooking.remainingMinutes > 10)): {
-				renderBookNext();
-			}
-	
-			// Back to back meeting
-			active (inUse): {
-				renderBackToBack();
-			}
+	case STATE_OFFLINE: {
+		setPageAnimated(dvTp, PAGE_CONNECTING, 'fade', 0, 20);
+		break;
+	}
 
-			// Ummmm...
-			active (1): {
-				amx_log(AMX_WARNING, 'Unexpected system state. Could not update UI');
-			}
-	
+	case STATE_AVAILABLE: {
+		stack_var char nextInfoText[512];
+
+		if (nextBooking.startDate == ldate) {
+			nextInfoText = "'"', nextBooking.subject, '" begins in ', fuzzyTime(nextBooking.minutesUntilStart), '.'";
+		} else {
+			nextInfoText = 'No bookings currently scheduled for the rest of the day.';
 		}
-	}
-}
-
-/**
- * Set up the UI to display the 'room available' screen.
- *
- * Do not call this directly. If an update is required use redraw().
- */
-define_function renderRoomAvilable() {
-	stack_var char nextInfoText[512];
 	
-	if (nextBooking.startDate == ldate) {
-		nextInfoText = "'"', nextBooking.subject, '" begins in ', fuzzyTime(nextBooking.minutesUntilStart), '.'";
-	} else {
-		nextInfoText = 'No bookings currently scheduled for the rest of the day.';
+		setButtonText(dvTp, BTN_NEXT_INFO, nextInfoText);
+
+		setPageAnimated(dvTp, PAGE_AVAILABLE, 'fade', 0, 20);
+		
+		break;
 	}
 
-	setButtonText(dvTp, BTN_NEXT_INFO, nextInfoText);
-
-	setPageAnimated(dvTp, PAGE_AVAILABLE, 'fade', 0, 20);
-}
-
-/**
- * Set up the UI to display the next active meeting info.
- *
- * Do not call this directly. If an update is required use redraw().
- */
-define_function renderNextMeeting() {
-	setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, nextBooking.subject);
-	setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTime(nextBooking.minutesUntilStart)");
-	setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
-
-	// TODO show attendees
-
-	showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
-
-	setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
-}
-
-/**
- * Set up the UI to display the active meeting info.
- *
- * Do not call this directly. If an update is required use redraw().
- */
-define_function renderActiveMeeting() {
-	setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
-	setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
-	setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
-
-	// TODO set attendees
-
-	showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
+	case STATE_IN_USE: {
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
+		setButtonText(dvTp, BTN_ACTIVE_TIMES, "time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
 	
-	setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
-}
-
-/**
- * Set up the UI to display the 'book next' screen.
- *
- * Do not call this directly. If an update is required use redraw().
- */
-define_function renderBookNext() {
-	stack_var char availability[512];
+		// TODO set attendees
 	
-	if (nextBooking.startDate == ldate) {
-		availability = fuzzyTime(nextBooking.minutesUntilStart);
-	} else {
-		availability = 'the rest of the day';
+		showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
+	
+		setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+
+		break;
 	}
-	
-	setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
-	setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
-	setButtonText(dvTp, BTN_AVAILABILITY_WINDOW, "'The room is available for ', availability, ' following the current meeting.'");
 
-	showPopupEx(dvTp, POPUP_BOOK_NEXT, PAGE_IN_USE);
+	case STATE_BOOKING_NEAR: {
+		setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, nextBooking.subject);
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTime(nextBooking.minutesUntilStart)");
+		setButtonText(dvTp, BTN_ACTIVE_TIMES,"time12Hour(activeBooking.startTime), ' - ', time12Hour(activeBooking.endTime)");
 	
-	setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
-}
+		// TODO show attendees
+	
+		showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
+	
+		setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
 
-/**
- * Set up the UI to display the 'back to back' screen.
- *
- * Do not call this directly. If an update is required use redraw().
- */
-define_function renderBackToBack() {	
-	setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
-	setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
-	setButtonText(dvTp, BTN_BACK_TO_BACK_INFO, "'The room is reserved for "', nextBooking.subject, '" directly following this.'");
+		break;
+	}
+
+	case STATE_BOOKING_ENDING: {
+		stack_var char availability[512];
+
+		if (nextBooking.startDate == ldate) {
+			availability = fuzzyTime(nextBooking.minutesUntilStart);
+		} else {
+			availability = 'the rest of the day';
+		}
 	
-	showPopupEx(dvTp, POPUP_BACK_TO_BACK, PAGE_IN_USE);
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
+		setButtonText(dvTp, BTN_AVAILABILITY_WINDOW, "'The room is available for ', availability, ' following the current meeting.'");
 	
-	setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+		showPopupEx(dvTp, POPUP_BOOK_NEXT, PAGE_IN_USE);
+	
+		setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+
+		break;
+	}
+
+	case STATE_BOOKED_BACK_TO_BACK: {
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, activeBooking.subject);
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(activeBooking.remainingMinutes)");
+		setButtonText(dvTp, BTN_BACK_TO_BACK_INFO, "'The room is reserved for "', nextBooking.subject, '" directly following this.'");
+	
+		showPopupEx(dvTp, POPUP_BACK_TO_BACK, PAGE_IN_USE);
+	
+		setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+
+		break;
+	}
+
+	default: {
+		amx_log(AMX_ERROR, 'Unhandled system state. Could not render UI.');
+	}
+
+	}
 }
 
 /**
@@ -217,15 +249,15 @@ define_function renderBackToBack() {
 define_function updateAvailableBookingTimes() {
 	setButtonEnabled(dvTp, BTN_TIME_SELECT[1], (nextBooking.minutesUntilStart > 10));
 	setButtonFaded(dvTp, BTN_TIME_SELECT[1], (nextBooking.minutesUntilStart > 10));
-	
+
 	setButtonEnabled(dvTp, BTN_TIME_SELECT[2], (nextBooking.minutesUntilStart > 20));
 	setButtonFaded(dvTp, BTN_TIME_SELECT[2], (nextBooking.minutesUntilStart > 20));
-	
+
 	setButtonEnabled(dvTp, BTN_TIME_SELECT[3], (nextBooking.minutesUntilStart > 30));
 	setButtonFaded(dvTp, BTN_TIME_SELECT[3], (nextBooking.minutesUntilStart > 30));
-	
+
 	setButtonEnabled(dvTp, BTN_TIME_SELECT[4], (nextBooking.minutesUntilStart > 60));
-	setButtonFaded(dvTp, BTN_TIME_SELECT[4], (nextBooking.minutesUntilStart > 60));	
+	setButtonFaded(dvTp, BTN_TIME_SELECT[4], (nextBooking.minutesUntilStart > 60));
 }
 
 /**
@@ -233,16 +265,16 @@ define_function updateAvailableBookingTimes() {
  */
 define_function setBookingRequestLength(integer minutes) {
 	stack_var integer i;
-	
+
 	for (i = 1; i <= length_array(BTN_TIME_SELECT); i++) {
 		[dvTp, BTN_TIME_SELECT[i]] = (BOOKING_REQUEST_LENGTHS[i] == minutes);
 	}
-	
+
 	bookingRequestLength = minutes;
 }
 
 /**
- * Sets the system state.
+ * Sets the system online state.
  *
  * @param	isOnLine	a boolean, true if we are good to go
  */
@@ -263,7 +295,7 @@ define_function setOnline(char isOnline) {
 		cancel_wait 'systemOnlineAnimSequence';
 		setPageAnimated(dvTp, PAGE_BLANK, 'fade', 0, 10);
 		wait 10 'systemOnlineAnimSequence' {
-			setPageAnimated(dvTp, PAGE_CONNECTING, 'fade', 0, 20);
+			redraw();
 		}
 
 	}
@@ -297,7 +329,7 @@ define_function setActiveMeetingInfo(RmsEventBookingResponse booking) {
  *						data
  */
 define_function setNextMeetingInfo(RmsEventBookingResponse booking) {
-	
+
 	// As of SDK v4.1.14 the next active update events will fire when creating
 	// bookings before all the data is available. When valid data is coming
 	// in minutesUntilStart wil always be > 0. Handling this here just
@@ -305,9 +337,9 @@ define_function setNextMeetingInfo(RmsEventBookingResponse booking) {
 	if (booking.minutesUntilStart == 0) {
 		booking.minutesUntilStart = MAX_MINUTES;
 	}
-	
+
 	nextBooking = booking;
-	
+
 	updateAvailableBookingTimes();
 	redraw();
 }
@@ -330,6 +362,23 @@ define_function clearNextMeeting() {
 	stack_var RmsEventBookingResponse blank;
 	blank.minutesUntilStart = MAX_MINUTES;
 	setNextMeetingInfo(blank);
+}
+
+/**
+ * Creates an adhoc booking.
+ *
+ * @param	startTime	the booking start time in the form HH:MM:SS
+ * @param	length		the booking length in minutes
+ * @param	user		???
+ */
+define_function createAdHocBooking(char startTime[8], integer length,
+		char user[]) {
+	RmsBookingCreate(ldate,
+			startTime,
+			length,
+			'Ad-hoc Meeting',
+			'Ad-hoc meeting created from touch panel booking system.',
+			locationTracker.location.id);
 }
 
 
@@ -417,6 +466,33 @@ define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 }
 
 
+// Touch panel callbacks
+
+define_function NfcTagRead(integer tagType, char uid[], integer uidLength) {
+	
+	// TODO lookup user
+	
+	switch (getState()) {
+	
+	case STATE_AVAILABLE:
+		// FIXME
+		// As of SDK v4.1.14 the response to ?asset.location does not include
+		// the locations timezone. As such, if the touch panel is in a location
+		// that has a different timezone to this controller adhoc meetings will
+		// be created at incorrect times.
+		createAdHocBooking(time, bookingRequestLength, '');
+		break;
+	
+	case STATE_BOOKING_ENDING:
+		// TODO book at the meeting end time
+		createAdHocBooking(time, bookingRequestLength, '');
+		break;
+
+	}
+
+}
+
+
 define_event
 
 channel_event[vdvRMS, RMS_CHANNEL_CLIENT_REGISTERED] {
@@ -453,7 +529,6 @@ button_event[dvTp, BTN_BOOK_NEXT] {
 	}
 
 }
-
 
 button_event[dvTp, BTN_TIME_SELECT] {
 
