@@ -1,25 +1,28 @@
-PROGRAM_NAME='TimeUtil'
+PROGRAM_NAME='FuzzyTime'
 
 
-define_variable
+#INCLUDE 'Unixtime';
 
-constant long TIME_MINUTE = 1;
-constant long TIME_HOUR = 60 * TIME_MINUTE;
-constant long TIME_DAY = 24 * TIME_HOUR;
-constant long TIME_MONTH = 30 * TIME_DAY;
+
+define_constant
+
+FUZZY_TIME_RETURN_SIZE = 32;
 
 
 /**
- * Convert a number of minutes into a human readable (and easilly
+ * Convert a delta between two unixtime values into a human readable (and easily
  * understandable) string.
  *
- * @param	minutes		the number of minutes of time to represent
- * @return				a string containing the time represented in a nice,
- *						readble way
+ * @param	t1			a unixtime time value to form the lower end of the delta
+ * @param	t2			a unixtime value to form the upper end of the delta
+ * @return				a string containing the time difference between between
+ *						't1' and 't2' in a represented in a nice, readble
+ *						format.
  */
-define_function char[32] fuzzyTime(long minutes) {
-	stack_var char ret[32];
+define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
+	stack_var char ret[FUZZY_TIME_RETURN_SIZE];
 
+/*
 	select {
 		active (minutes <= 1 * TIME_MINUTE): {
 			ret = '1 minute';
@@ -70,38 +73,23 @@ define_function char[32] fuzzyTime(long minutes) {
 			ret = 'more than a year';
 		}
 	}
+	*/
+	ret = itoa(t2-t1);
 
 	return ret;
 }
 
 /**
- * Converts a string representing time in a hh:mm:ss format to hh:mm[am/pm]
- *
- * @param	timeStr		the time to convert in 24 hour format
- * @return				the passed time in 12 hour format
+ * Get the 
  */
-define_function char[7] time12Hour(char timeStr[8]) {
-	sinteger hours;
-	sinteger minutes;
-	char period[2];
-
-	hours = time_to_hour(timeStr);
-	minutes = time_to_minute(timeStr);
-
-	if (hours == -1 || minutes == -1) {
-		return 'error';
-	}
-
-	if (hours > 11) {
-		period = 'pm';
-		hours = hours - 12;
-	} else {
-		period = 'am'
-	}
-
-	if (hours == 0) {
-		hours = 12;
-	}
-
-	return "format('%d', hours), ':', format('%02d', minutes), period";
+ /**
+ * Convert a delta between now and a passed time value into a human readable
+ * (and easily understandable) string.
+ *
+ * @param	t			a unixtime time compare to
+ * @return				a string containing the time difference between between
+ *						now and 't'.
+ */
+define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTimeDelta(slong t) {
+	return fuzzyTime(unixtime_now(), t);
 }

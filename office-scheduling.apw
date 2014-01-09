@@ -130,8 +130,20 @@
 <UserName></UserName>
 <Password></Password>
 <Comments></Comments>
-<File CompileType="None" Type="Include"><Identifier>TimeUtil</Identifier>
-<FilePathName>include\TimeUtil.axi</FilePathName>
+<File CompileType="None" Type="Include"><Identifier>BookingTracker</Identifier>
+<FilePathName>include\BookingTracker.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>FuzzyTime</Identifier>
+<FilePathName>include\FuzzyTime.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>String</Identifier>
+<FilePathName>lib\ncl\string.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>Unixtime</Identifier>
+<FilePathName>lib\ncl\unixtime.axi</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="None" Type="Include"><Identifier>RmsApi</Identifier>
@@ -197,6 +209,8 @@
 <File CompileType="None" Type="TP4"><Identifier>scheduling</Identifier>
 <FilePathName>ui\scheduling.TP4</FilePathName>
 <Comments></Comments>
+<DeviceMap DevAddr="dvTPGCBoardroom"><DevName>dvTPGCBoardroom</DevName>
+</DeviceMap>
 </File>
 </System>
 </Project>
