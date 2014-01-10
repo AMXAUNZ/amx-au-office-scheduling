@@ -146,6 +146,10 @@
 <FilePathName>include\TimeUtil.axi</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="None" Type="Include"><Identifier>Math</Identifier>
+<FilePathName>lib\ncl\math.axi</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="None" Type="Include"><Identifier>String</Identifier>
 <FilePathName>lib\ncl\string.axi</FilePathName>
 <Comments></Comments>
