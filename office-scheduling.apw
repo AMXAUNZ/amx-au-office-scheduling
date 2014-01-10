@@ -130,12 +130,16 @@
 <UserName></UserName>
 <Password></Password>
 <Comments></Comments>
-<File CompileType="None" Type="Include"><Identifier>BookingTracker</Identifier>
-<FilePathName>include\BookingTracker.axi</FilePathName>
+<File CompileType="None" Type="Include"><Identifier>BookingManager</Identifier>
+<FilePathName>include\BookingManager.axi</FilePathName>
 <Comments></Comments>
 </File>
-<File CompileType="None" Type="Include"><Identifier>FuzzyTime</Identifier>
-<FilePathName>include\FuzzyTime.axi</FilePathName>
+<File CompileType="None" Type="Include"><Identifier>DailyBookingTracker</Identifier>
+<FilePathName>include\DailyBookingTracker.axi</FilePathName>
+<Comments></Comments>
+</File>
+<File CompileType="None" Type="Include"><Identifier>TimeUtil</Identifier>
+<FilePathName>include\TimeUtil.axi</FilePathName>
 <Comments></Comments>
 </File>
 <File CompileType="None" Type="Include"><Identifier>String</Identifier>

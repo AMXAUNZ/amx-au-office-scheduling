@@ -5,11 +5,11 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #DEFINE INCLUDE_TP_NFC_TAG_READ_CALLBACK
 
 
-#INCLUDE 'FuzzyTime';
+#INCLUDE 'TimeUtil';
 #INCLUDE 'String';
 #INCLUDE 'Unixtime'
 #INCLUDE 'RmsAssetLocationTracker';
-#INCLUDE 'BookingTracker';
+#INCLUDE 'DailyBookingTracker';
 #INCLUDE 'TpApi';
 #INCLUDE 'TPEventListener';
 #INCLUDE 'RmsApi';
@@ -55,7 +55,7 @@ constant integer BTN_BOOK_NEXT = 12;
 
 // UI re-render manager
 constant long UI_UPDATE_INTERVAL[] = {15000};
-constant long TL_UI_UPDATE = 1;
+constant long UI_UPDATE_TL = 1;
 
 // Options available for 'meet now' and 'book next' inital meeting lengths
 constant integer BOOKING_REQUEST_LENGTHS[] = {10, 20, 30, 60};
@@ -78,12 +78,12 @@ define_function init() {
 define_function char getState() {
 	stack_var char state;
 	stack_var char isBooked;
-	stack_var integer timeUntilNextBooking;
-	stack_var integer timeRemaining;
-	
+	stack_var integer minutesUntilNextBooking;
+	stack_var integer minutesRemaining;
+
 	isBooked = isBookedNow();
-	timeUntilNextBooking = getMinutesUntilNextBooking();
-	timeRemaining = getMinutesUntilBookingEnd();
+	minutesUntilNextBooking = getMinutesUntilNextBooking();
+	minutesRemaining = getMinutesUntilBookingEnd();
 
 	select {
 
@@ -93,7 +93,9 @@ define_function char getState() {
 		}
 
 		// Meeting approaching
-		active (!isBooked && timeUntilNextBooking <= 5): {
+		active (!isBooked &&
+				minutesUntilNextBooking != -1 && 
+				minutesUntilNextBooking <= 5): {
 			state = STATE_BOOKING_NEAR;
 		}
 
@@ -103,12 +105,13 @@ define_function char getState() {
 		}
 
 		// Room in use
-		active (isBooked && timeRemaining > 5): {
+		active (isBooked && minutesRemaining > 5): {
 			state = STATE_IN_USE;
 		}
 
 		// Nearing end of current meeting and there's upcoming availability
-		active (isBooked && (timeUntilNextBooking - timeRemaining > 10)): {
+		active (isBooked &&
+				(minutesUntilNextBooking - minutesRemaining > 10)): {
 			state = STATE_BOOKING_ENDING;
 		}
 
@@ -133,12 +136,9 @@ define_function char getState() {
  * system state;
  */
 define_function redraw() {
-	// Throttle UI renders to 1000ms
-	// Placing this in a wait also enables us to ensure that we have had a
-	// chance to handle all relevent events and ensure we don't redraw with
-	// partial / incorrect data.
+	// Throttle UI renders to 100ms
 	cancel_wait 'ui update';
-	wait 10 'ui update' {
+	wait 1 'ui update' {
 		render(getState());
 	}
 }
@@ -150,8 +150,8 @@ define_function redraw() {
  */
 define_function render(char state) {
 	stack_var integer currentId;
-	stack_var event current;
 	stack_var integer nextId;
+	stack_var event current;
 	stack_var event next;
 	stack_var slong timeOffset;
 	
@@ -348,7 +348,7 @@ define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 		RmsEventBookingResponse eventBookingResponse) {
 	if (eventBookingResponse.location = locationTracker.location.id) {
 		// TODO handle create feedback
-		// TODO need to make sure this is inserted into todaysBookings
+		handleRmsBookingResponse(eventBookingResponse);
 	}
 }
 
@@ -396,7 +396,7 @@ data_event[dvTp] {
 	online: {
 		setOnline([vdvRMS, RMS_CHANNEL_CLIENT_REGISTERED]);
 
-		timeline_create(TL_UI_UPDATE,
+		timeline_create(UI_UPDATE_TL,
 			UI_UPDATE_INTERVAL,
 			1,
 			TIMELINE_RELATIVE,
@@ -404,12 +404,12 @@ data_event[dvTp] {
 	}
 
 	offline: {
-		timeline_kill(TL_UI_UPDATE);
+		timeline_kill(UI_UPDATE_TL);
 	}
 
 }
 
-timeline_event[TL_UI_UPDATE] {
+timeline_event[UI_UPDATE_TL] {
 	redraw();
 }
 

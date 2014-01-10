@@ -1,4 +1,4 @@
-PROGRAM_NAME='FuzzyTime'
+PROGRAM_NAME='TimeUtil'
 
 
 #INCLUDE 'Unixtime';
@@ -80,7 +80,7 @@ define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
 }
 
 /**
- * Get the 
+ * Get the
  */
  /**
  * Convert a delta between now and a passed time value into a human readable
