@@ -349,12 +349,16 @@ define_function createAdHocBooking(char startTime[8], integer length,
 define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 		char responseText[],
 		RmsEventBookingResponse eventBookingResponse) {
-	if (eventBookingResponse.location = locationTracker.location.id) {
-		setRmsRapidUpdateEnabled(false);
-		handleRmsBookingResponse(eventBookingResponse);
-		
-		// TODO handle create feedback
+	setRmsRapidUpdateEnabled(false);
+
+	if (eventBookingResponse.isSuccessful &&
+			eventBookingResponse.location == locationTracker.location.id &&
+			eventBookingResponse.startDate == ldate) {
+		storeRmsBookingResponse(eventBookingResponse, todaysBookings);
+		redraw();
 	}
+	
+	// TODO handle create feedback
 }
 
 

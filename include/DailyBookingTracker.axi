@@ -61,6 +61,15 @@ define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
 define_function resyncDailyBookings() {
 	clearBookingList(todaysBookings);
 	RmsBookingsRequest(ldate, locationTracker.location.id);
+	
+	// Ideally this should be called from
+	// RmsEventSchedulingBookingsRecordResponse(..) when it's the last record
+	// however as of SDK v4.1.16 this appears to be broken and containes the
+	// same value as recordIndex for every call.
+	cancel_wait 'post daily booking resync redraw';
+	wait 50 'post daily booking resync redraw'{
+		redraw();
+	}
 }
 
 /**
@@ -127,17 +136,14 @@ define_function integer getMinutesUntilBookingEnd() {
 }
 
 /**
- * RMS response handler for any RmsEventBookingResponses that should be 
- * considered for including in the daily bookings list.
+ * Store a RmsEventBookingResponse in todays booking tracker.
  *
- * @param	booking		the RmsEventBookingResponse to (possibly) store
+ * @param	booking		the RmsEventBookingResponse to store
  */
-define_function handleRmsBookingResponse(RmsEventBookingResponse booking) {
-	if (booking.isSuccessful &&
-			booking.location == locationTracker.location.id &&
+define_function storeRmsResponse(RmsEventBookingResponse booking) {
+	if (booking.location == locationTracker.location.id &&
 			booking.startDate == ldate) {
 		storeRmsBookingResponse(booking, todaysBookings);
-		redraw();
 	}
 }
 
@@ -146,7 +152,11 @@ define_function handleRmsBookingResponse(RmsEventBookingResponse booking) {
 
 define_function RmsEventSchedulingEventUpdated(CHAR bookingId[],
 		RmsEventBookingResponse eventBookingResponse) {
-	handleRmsBookingResponse(eventBookingResponse);
+	if (eventBookingResponse.location == locationTracker.location.id &&
+			eventBookingResponse.startDate == ldate) {
+		storeRmsBookingResponse(eventBookingResponse, todaysBookings);
+		redraw();
+	}
 }
 
 define_function RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
@@ -154,7 +164,10 @@ define_function RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
 		INTEGER recordCount,
 		CHAR bookingId[],
 		RmsEventBookingResponse eventBookingResponse) {
-	handleRmsBookingResponse(eventBookingResponse);
+	if (eventBookingResponse.location == locationTracker.location.id &&
+			eventBookingResponse.startDate == ldate) {
+		storeRmsBookingResponse(eventBookingResponse, todaysBookings);
+	}
 }
 
 
