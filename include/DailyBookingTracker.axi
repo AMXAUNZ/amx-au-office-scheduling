@@ -160,20 +160,34 @@ define_function RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
 
 define_start
 
-timeline_create(DAILY_BOOKING_RESYNC_TL,
-		DAILY_BOOKING_RESYNC_INTERVAL,
-		1,
-		TIMELINE_RELATIVE,
-		TIMELINE_REPEAT);
+clearBookingList(todaysBookings);
 
 
 define_event
 
+channel_event[vdvRMS, RMS_CHANNEL_CLIENT_REGISTERED] {
+
+	on: {
+		timeline_create(DAILY_BOOKING_RESYNC_TL,
+				DAILY_BOOKING_RESYNC_INTERVAL,
+				1,
+				TIMELINE_RELATIVE,
+				TIMELINE_REPEAT);
+
+		cancel_wait 'daily booking initial sync';
+		wait 100 'daily booking initial sync'{
+			resyncDailyBookings();
+		}
+	}
+
+	off: {
+		if (timeline_active(DAILY_BOOKING_RESYNC_TL)) {
+			timeline_kill(DAILY_BOOKING_RESYNC_TL);
+		}
+	}
+
+}
+
 timeline_event[DAILY_BOOKING_RESYNC_TL] {
 	resyncDailyBookings();
 }
-
-
-define_start
-
-clearBookingList(todaysBookings);
