@@ -104,7 +104,7 @@ define_function integer getMinutesUntilNextBooking() {
 	if (nextBooking == 0) {
 		return $ffff;
 	}
-	return type_cast((todaysBookings[nextBooking].start - timeNow) *
+	return type_cast((todaysBookings[nextBooking].start - timeNow) /
 			UNIXTIME_SECONDS_PER_MINUTE);
 }
 
@@ -122,7 +122,7 @@ define_function integer getMinutesUntilBookingEnd() {
 	if (activeBooking == 0) {
 		return 0;
 	}
-	return type_cast((todaysBookings[activeBooking].end - timeNow) *
+	return type_cast((todaysBookings[activeBooking].end - timeNow) /
 			UNIXTIME_SECONDS_PER_MINUTE);
 }
 
