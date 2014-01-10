@@ -138,6 +138,10 @@
 <FilePathName>include\DailyBookingTracker.axi</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="None" Type="Include"><Identifier>RmsRapidUpdater</Identifier>
+<FilePathName>include\RmsRapidUpdater.axi</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="None" Type="Include"><Identifier>TimeUtil</Identifier>
 <FilePathName>include\TimeUtil.axi</FilePathName>
 <Comments></Comments>

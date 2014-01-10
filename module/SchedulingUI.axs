@@ -9,6 +9,7 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #INCLUDE 'String';
 #INCLUDE 'Unixtime'
 #INCLUDE 'RmsAssetLocationTracker';
+#INCLUDE 'RmsRapidUpdater';
 #INCLUDE 'DailyBookingTracker';
 #INCLUDE 'TpApi';
 #INCLUDE 'TPEventListener';
@@ -93,9 +94,7 @@ define_function char getState() {
 		}
 
 		// Meeting approaching
-		active (!isBooked &&
-				minutesUntilNextBooking != -1 && 
-				minutesUntilNextBooking <= 5): {
+		active (!isBooked && minutesUntilNextBooking <= 5): {
 			state = STATE_BOOKING_NEAR;
 		}
 
@@ -338,6 +337,10 @@ define_function createAdHocBooking(char startTime[8], integer length,
 			'Ad-hoc Meeting',
 			'Ad-hoc meeting created from touch panel booking system.',
 			locationTracker.location.id);
+
+	// Rather than waiting for the next heartbeat for a response lets accelerate
+	// things a little bit so we can keep the UI nice and fast.
+	setRmsRapidUpdateEnabled(true);
 }
 
 
@@ -347,8 +350,10 @@ define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 		char responseText[],
 		RmsEventBookingResponse eventBookingResponse) {
 	if (eventBookingResponse.location = locationTracker.location.id) {
-		// TODO handle create feedback
+		setRmsRapidUpdateEnabled(false);
 		handleRmsBookingResponse(eventBookingResponse);
+		
+		// TODO handle create feedback
 	}
 }
 
