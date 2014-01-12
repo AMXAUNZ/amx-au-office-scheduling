@@ -89,15 +89,15 @@ define_function integer getBookingAfter(slong t, Event bookingList[]) {
 define_function insertBooking(Event booking, Event bookingList[]) {
 	stack_var integer insertIndex;
 
-	if (length_array(bookingList) == max_length_array(bookingList)) {
-		amx_log(AMX_ERROR, 'Could not insert Event, passed array is already at capacity');
-		return;
-	}
-
 	// Check to see if we're just updating an existing entry
 	insertIndex = getBookingAt(booking.start, bookingList);
 	if (!insertIndex) {
 
+		if (length_array(bookingList) == max_length_array(bookingList)) {
+			amx_log(AMX_ERROR, 'Could not insert Event, passed array is already at capacity');
+			return;
+		}
+		
 		// See if there's any more bookings we need to shift down
 		stack_var integer nextBookingIndex;
 		nextBookingIndex = getBookingAfter(booking.start, bookingList);
