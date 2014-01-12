@@ -39,9 +39,6 @@ define_function char bookingHasTemporaryId(Event e) {
 	// digit number followed by a dash.
 	tempId = "'-', itoa(e.start), '000-', itoa(e.end), '000'";
 
-	send_string 0, "'Checking for temp id: ', e.externalId"
-	send_string 0, "'temp id: ', tempId";
-
 	select {
 		active(right_string(e.externalId, length_string(tempId)) == tempId): {
 			send_string 0, 'Yep';
