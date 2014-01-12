@@ -29,7 +29,7 @@ structure Event {
 
 
 /**
- * Get the first instance of a booking id that intersects with a specific time.
+ * Get the booking id that intersects with a specific time.
  *
  * @param	t			a unixtime value to check for
  * @param	bookingList	an ordered array of Events to search in
@@ -37,15 +37,25 @@ structure Event {
  */
 define_function integer getBookingAt(slong t, Event bookingList[]) {
 	stack_var integer id;
-
-	// TODO implemement a more efficient search here
-	for (id = 1; id <= length_array(bookingList); id++) {
-		if (t >= bookingList[id].start &&
-				t <= bookingList[id].end) {
-			return id;
+	stack_var integer min;
+	stack_var integer max;
+	
+	min = 1;
+	max = length_array(bookingList);
+	
+	while (max >= min) {
+		id = min + (max - min) / 2;
+	
+		if (t >= bookingList[id].start && t <= bookingList[id].end) {
+			break;
+		} else if (t > bookingList[id].start) {
+			min = id + 1;
+		} else {
+			max = id - 1;
 		}
 	}
-	return 0;
+	
+	return id;
 }
 
 /**
@@ -57,13 +67,14 @@ define_function integer getBookingAt(slong t, Event bookingList[]) {
  */
 define_function integer getBookingAfter(slong t, Event bookingList[]) {
 	stack_var integer id;
-
-	// TODO implemement a more efficient search here
+	
+	// TODO implement a more efficient search here
 	for (id = 1; id <= length_array(bookingList); id++) {
 		if (t < bookingList[id].start) {
 			return id;
 		}
 	}
+	
 	return 0;
 }
 
@@ -86,7 +97,7 @@ define_function insertBooking(Event booking, Event bookingList[]) {
 	// Check to see if we're just updating an existing entry
 	insertIndex = getBookingAt(booking.start, bookingList);
 	if (!insertIndex) {
-	
+
 		// See if there's any more bookings we need to shift down
 		stack_var integer nextBookingIndex;
 		nextBookingIndex = getBookingAfter(booking.start, bookingList);
@@ -101,7 +112,7 @@ define_function insertBooking(Event booking, Event bookingList[]) {
 		} else {
 			insertIndex = length_array(bookingList) + 1;
 		}
-		
+
 		set_length_array(bookingList, length_array(bookingList) + 1);
 	}
 
