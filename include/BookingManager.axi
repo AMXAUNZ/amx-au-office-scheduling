@@ -41,10 +41,10 @@ define_function integer getBookingAt(slong t, Event bookingList[]) {
 	stack_var integer id;
 	stack_var integer min;
 	stack_var integer max;
-	
+
 	min = 1;
 	max = length_array(bookingList);
-	
+
 	while (max >= min) {
 		id = min + (max - min) / 2;
 		if (t >= bookingList[id].start && t <= bookingList[id].end) {
@@ -55,7 +55,7 @@ define_function integer getBookingAt(slong t, Event bookingList[]) {
 			max = id - 1;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -68,14 +68,14 @@ define_function integer getBookingAt(slong t, Event bookingList[]) {
  */
 define_function integer getBookingAfter(slong t, Event bookingList[]) {
 	stack_var integer id;
-	
+
 	// TODO implement a more efficient search here
 	for (id = 1; id <= length_array(bookingList); id++) {
 		if (t < bookingList[id].start) {
 			return id;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -88,14 +88,14 @@ define_function integer getBookingAfter(slong t, Event bookingList[]) {
  */
 define_function integer getBooking(char externalId[], Event bookingList[]) {
 	stack_var integer id;
-	
+
 	// TODO implement a more efficient search here
 	for (id = 1; id <= length_array(bookingList); id++) {
 		if (externalId == bookingList[id].externalId) {
 			return id;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -123,7 +123,7 @@ define_function insertBooking(Event booking, Event bookingList[]) {
 		amx_log(AMX_ERROR, 'Could not insert Event, passed array is already at capacity');
 		return;
 	}
-	
+
 	// See if there's any more bookings we need to shift down
 	nextBookingIndex = getBookingAfter(booking.start, bookingList);
 	if (nextBookingIndex) {
