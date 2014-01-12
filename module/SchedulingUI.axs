@@ -158,7 +158,6 @@ define_function render(char state) {
 	stack_var integer nextId;
 	stack_var event current;
 	stack_var event next;
-	stack_var slong timeOffset;
 
 	currentId = getActiveBookingId();
 	if (currentId) {
@@ -168,12 +167,6 @@ define_function render(char state) {
 	if (nextId) {
 		next = todaysBookings[nextId];
 	}
-
-	// FIXME
-	// Current this will render all times local to the master's timezone
-	// rather than the touch panel asset.
-	timeOffset = unixtime_utc_offset_hr * UNIXTIME_SECONDS_PER_HOUR +
-			unixtime_utc_offset_min * UNIXTIME_SECONDS_PER_MINUTE;
 
 	switch (state) {
 
@@ -201,7 +194,7 @@ define_function render(char state) {
 	case STATE_IN_USE: {
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, current.subject);
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTimeDelta(current.end)");
-		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', current.start + timeOffset), ' - ', fmt_date('g:ia', current.end + timeOffset)");
+		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', current.start + getTimeOffset()), ' - ', fmt_date('g:ia', current.end + getTimeOffset())");
 
 		updateAttendees(current.attendees);
 
@@ -215,7 +208,7 @@ define_function render(char state) {
 	case STATE_BOOKING_NEAR: {
 		setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, next.subject);
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTimeDelta(next.start)");
-		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', next.start + timeOffset), ' - ', fmt_date('g:ia',next.end + timeOffset)");
+		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', next.start + getTimeOffset()), ' - ', fmt_date('g:ia',next.end + getTimeOffset())");
 
 		updateAttendees(next.attendees);
 
@@ -307,6 +300,19 @@ define_function updateAvailableBookingTimes() {
 }
 
 /**
+ * Get the time offset required to convert between UTC and local time.
+ *
+ * @return				the time offset
+ */
+define_function slong getTimeOffset() {
+	// FIXME
+	// Current this assume that the offset need is the local masters time. This
+	// needs to account for having the UI in a seperate TZ to the master.
+	return unixtime_utc_offset_hr * UNIXTIME_SECONDS_PER_HOUR +
+			unixtime_utc_offset_min * UNIXTIME_SECONDS_PER_MINUTE;
+}
+
+/**
  * Set the legnth that will be utilised by ad-hoc booking requests.
  */
 define_function setBookingRequestLength(integer minutes) {
@@ -389,16 +395,21 @@ define_function NfcTagRead(integer tagType, char uid[], integer uidLength) {
 
 	switch (getState()) {
 
-	case STATE_AVAILABLE:
-		// FIXME
-		// This needs to handle cases where the TZ of the panel differs from the
-		// master.
-		createAdHocBooking(time, bookingRequestLength, '');
+	case STATE_AVAILABLE: {
+		stack_var char requestTime[8];
+		requestTime = unixtime_to_netlinx_time(unixtime_now() + getTimeOffset());
+		createAdHocBooking(requestTime, bookingRequestLength, '');
 		break;
+	}
 
-	case STATE_BOOKING_ENDING:
-		// TODO implement 'book next' functionality'
+	case STATE_BOOKING_ENDING:{
+		stack_var char requestTime[8];
+		stack_var Event current;
+		current = todaysBookings[getActiveBookingId()];
+		requestTime = unixtime_to_netlinx_time(current.end + getTimeOffset());
+		createAdHocBooking(requestTime, bookingRequestLength, '');
 		break;
+	}
 
 	}
 
