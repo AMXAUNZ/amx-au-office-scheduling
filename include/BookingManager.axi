@@ -45,9 +45,8 @@ define_function integer getBookingAt(slong t, Event bookingList[]) {
 	
 	while (max >= min) {
 		id = min + (max - min) / 2;
-	
 		if (t >= bookingList[id].start && t <= bookingList[id].end) {
-			break;
+			return id;
 		} else if (t > bookingList[id].start) {
 			min = id + 1;
 		} else {
@@ -55,7 +54,7 @@ define_function integer getBookingAt(slong t, Event bookingList[]) {
 		}
 	}
 	
-	return id;
+	return 0;
 }
 
 /**
