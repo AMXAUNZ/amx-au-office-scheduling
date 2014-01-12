@@ -7,24 +7,26 @@ PROGRAM_NAME='BookingManager'
 
 define_constant
 
-integer MAX_SUBJECT_LENGTH = 255;
-integer MAX_DETAILS_LENGTH = 255;
-integer MAX_NAME_LENGTH = 128;
-integer MAX_ATTENDEES = 10;
+integer BOOKING_MAX_ID_LENGTH = 255;
+integer BOOKING_MAX_SUBJECT_LENGTH = 255;
+integer BOOKING_MAX_DETAILS_LENGTH = 255;
+integer BOOKING_MAX_NAME_LENGTH = 128;
+integer BOOKING_MAX_ATTENDEES = 10;
 
 
 define_type
 
 structure Event {
+	char externalId[BOOKING_MAX_ID_LENGTH];
 	SLONG start;
 	SLONG end;
-    CHAR subject[MAX_SUBJECT_LENGTH];
-    CHAR details[MAX_DETAILS_LENGTH];
+    CHAR subject[BOOKING_MAX_SUBJECT_LENGTH];
+    CHAR details[BOOKING_MAX_DETAILS_LENGTH];
     CHAR isPrivate;
     CHAR isAllDay;
-    CHAR organizer[MAX_NAME_LENGTH];
-    CHAR onBehalfOf[MAX_NAME_LENGTH];
-    CHAR attendees[MAX_ATTENDEES][MAX_NAME_LENGTH];
+    CHAR organizer[BOOKING_MAX_NAME_LENGTH];
+    CHAR onBehalfOf[BOOKING_MAX_NAME_LENGTH];
+    CHAR attendees[BOOKING_MAX_ATTENDEES][BOOKING_MAX_NAME_LENGTH];
 }
 
 
@@ -78,44 +80,65 @@ define_function integer getBookingAfter(slong t, Event bookingList[]) {
 }
 
 /**
- * Inserts an Event into an ordered array of Events. Simultaneous bookings are
- * not allowed, If array already contains an event with a matching start time
- * other details will be updated.
+ * Get a booking based on an external booking ID.
+ *
+ * @param	externalId		the external ID to search for
+ * @param	bookingList		an array of Events to search in
+ * @return					the index of a matching booking, 0 if not found
+ */
+define_function integer getBooking(char externalId[], Event bookingList[]) {
+	stack_var integer id;
+	
+	// TODO implement a more efficient search here
+	for (id = 1; id <= length_array(bookingList); id++) {
+		if (externalId == bookingList[id].externalId) {
+			return id;
+		}
+	}
+	
+	return 0;
+}
+
+/**
+ * Update the booking details at a specific index.
+ *
+ * @param	booking		the updated Event
+ * @param	bookingList a ordered array of Event to insert into
+ * @param	index		the insertion index
+ */
+define_function updateBooking(Event booking, Event bookingList[], integer index) {
+	bookingList[index] = booking;
+}
+
+/**
+ * Inserts an Event into an ordered array of Events.
  *
  * @param	booking		an Event to insert
  * @param	bookingList a ordered array of Event to insert into
  */
 define_function insertBooking(Event booking, Event bookingList[]) {
-	stack_var integer insertIndex;
+	stack_var integer nextBookingIndex;
 
-	// Check to see if we're just updating an existing entry
-	insertIndex = getBookingAt(booking.start, bookingList);
-	if (!insertIndex) {
-
-		if (length_array(bookingList) == max_length_array(bookingList)) {
-			amx_log(AMX_ERROR, 'Could not insert Event, passed array is already at capacity');
-			return;
+	if (length_array(bookingList) == max_length_array(bookingList)) {
+		amx_log(AMX_ERROR, 'Could not insert Event, passed array is already at capacity');
+		return;
+	}
+	
+	// See if there's any more bookings we need to shift down
+	nextBookingIndex = getBookingAfter(booking.start, bookingList);
+	if (nextBookingIndex) {
+		stack_var integer tmp;
+		tmp = length_array(bookingList) + 1;
+		while (tmp > nextBookingIndex) {
+			bookingList[tmp] = bookingList[tmp - 1];
+			tmp--;
 		}
-		
-		// See if there's any more bookings we need to shift down
-		stack_var integer nextBookingIndex;
-		nextBookingIndex = getBookingAfter(booking.start, bookingList);
-		if (nextBookingIndex) {
-			stack_var integer tmp;
-			tmp = length_array(bookingList) + 1;
-			while (tmp > nextBookingIndex) {
-				bookingList[tmp] = bookingList[tmp - 1];
-				tmp--;
-			}
-			insertIndex = nextBookingIndex;
-		} else {
-			insertIndex = length_array(bookingList) + 1;
-		}
-
-		set_length_array(bookingList, length_array(bookingList) + 1);
+		updateBooking(booking, bookingList, nextBookingIndex);
+	} else {
+		updateBooking(booking, bookingList, length_array(bookingList) + 1);
 	}
 
-	bookingList[insertIndex] = booking;
+	set_length_array(bookingList, length_array(bookingList) + 1);
 }
 
 /**

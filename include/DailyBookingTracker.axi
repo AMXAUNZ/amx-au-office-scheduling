@@ -23,15 +23,56 @@ constant long DAILY_BOOKING_RESYNC_INTERVAL[] = {300000};
 
 
 /**
- * Stores an RmsBookingResponse as an event in a booking array.
+ * Check if a booking ID is a temporary value assigned prior to full sync.
  *
- * @param	booking		an RmsEventBookingRepsonse to store
- * @param	bookingList	an array to store the booking in
+ * @param	if			the Event to check
+ * @return				a boolean, true if the passed Event has a temporary
+ *						external id
  */
-define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
-		Event bookingList[]) {
-	stack_var Event e;
+define_function char bookingHasTemporaryId(Event e) {
+	stack_var char tempId[BOOKING_MAX_ID_LENGTH];
+	
+	// As of SDK v4.1.16 RMS booking responses will come back with an id that
+	// is a concatination of what appears to be the location id, followed by a
+	// dash, the event start timestamp, another dash and the end timestamp.
+	// Additionally in a create response the ID appears to just contain a two
+	// digit number followed by a dash.
+	tempId = "'-', itoa(e.start), '000-', itoa(e.end), '000'";
 
+	send_string 0, "'Checking for temp id: ', e.externalId"
+	send_string 0, "'temp id: ', tempId";
+
+	select {
+		active(right_string(e.externalId, length_string(tempId)) == tempId): {
+			send_string 0, 'Yep';
+			return true;
+		}
+		
+		active (length_string(e.externalId) == 3 &&
+				right_string(e.externalId, 1) == '-'): {
+			send_string 0, 'Yep';
+			return true;	
+		}
+		
+		active(1): {
+			send_string 0, 'Nope';
+			return false;
+		}
+	}
+}
+
+/**
+ * Convert an RmsEventBookingResponse to and Event structure.
+ *
+ * Note: as NetLinx cannot return structures an event must be passed in to
+ * populate.
+ *
+ * @param	booking		a RmsEventBookingResponseToConvert
+ * @param	e			the Event to store the response in
+ */
+define_function rmsBookingResponseToEvent(RmsEventBookingResponse booking,
+		Event e) {
+	e.externalId = booking.bookingId;
 	e.start = unixtime(booking.startDate, booking.startTime);
 	e.end = unixtime(booking.endDate, booking.endTime);
 	if (booking.subject != 'N/A') {
@@ -51,7 +92,39 @@ define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
 	if (booking.attendees != 'N/A') {
 		explode('|', booking.attendees, e.attendees, 0);
 	}
+}
 
+/**
+ * Stores an RmsBookingResponse as an event in a booking array.
+ *
+ * @param	booking		an RmsEventBookingRepsonse to store
+ * @param	bookingList	an array to store the booking in
+ */
+define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
+		Event bookingList[]) {
+	stack_var Event e;
+	stack_var integer insertIndex;
+
+	rmsBookingResponseToEvent(booking, e);
+
+	// Update booking details if we're already tracking this one
+	insertIndex = getBooking(e.externalId, bookingList);
+	if (insertIndex) {
+		updateBooking(e, bookingList, insertIndex);
+		return;
+	}
+	
+	// If that didn't work lets see if there is a booking with a temp ID we can
+	// update
+	insertIndex = getBookingAt(e.start, bookingList);
+	if (insertIndex) {
+		if (bookingHasTemporaryId(bookingList[insertIndex])) {
+			updateBooking(e, bookingList, insertIndex);
+			return;
+		}
+	}
+	
+	// Otherwise insert as a freshn'
 	insertBooking(e, bookingList);
 }
 
@@ -137,15 +210,12 @@ define_function integer getMinutesUntilBookingEnd() {
 			UNIXTIME_SECONDS_PER_MINUTE);
 }
 
-/**
- * Store a RmsEventBookingResponse in todays booking tracker.
- *
- * @param	booking		the RmsEventBookingResponse to store
- */
-define_function storeRmsResponse(RmsEventBookingResponse booking) {
-	if (booking.location == locationTracker.location.id &&
-			booking.startDate == ldate) {
-		storeRmsBookingResponse(booking, todaysBookings);
+define_function bookingTrackerHandleCreateResponse(RmsEventBookingResponse response) {
+	if (response.isSuccessful &&
+			response.location == locationTracker.location.id &&
+			response.startDate == ldate) {
+		storeRmsBookingResponse(response, todaysBookings);
+		redraw();
 	}
 }
 
@@ -166,8 +236,11 @@ define_function RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
 		INTEGER recordCount,
 		CHAR bookingId[],
 		RmsEventBookingResponse eventBookingResponse) {
+	// As of SDK v4.1.16 this appears to fire if there are no bookings for the
+	// day, albiet with a recordCount of 0
 	if (eventBookingResponse.location == locationTracker.location.id &&
-			eventBookingResponse.startDate == ldate) {
+			eventBookingResponse.startDate == ldate &&
+			recordCount > 0) {
 		storeRmsBookingResponse(eventBookingResponse, todaysBookings);
 	}
 }
