@@ -34,7 +34,9 @@ define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
 
 	e.start = unixtime(booking.startDate, booking.startTime);
 	e.end = unixtime(booking.endDate, booking.endTime);
-	e.subject = booking.subject;
+	if (booking.subject != 'N/A') {
+		e.subject = booking.subject;
+	}
 	if (booking.details != 'N/A') {
 		e.details = booking.details;
 	}
