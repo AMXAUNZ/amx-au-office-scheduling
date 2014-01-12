@@ -43,6 +43,9 @@ constant char POPUP_ACTIVE_INFO[] = 'activeInfo';
 constant char POPUP_BACK_TO_BACK[] = 'backToBack';
 constant char POPUP_BOOK_NEXT[] = 'bookNext';
 
+// Sub page prefixs
+constant char SUBPAGE_ATTENDEE[] = '[attendee]';
+
 // Button addresses
 constant integer BTN_MEET_NOW = 1;
 constant integer BTN_NEXT_INFO = 2;
@@ -53,6 +56,9 @@ constant integer BTN_ACTIVE_TIMES = 9;
 constant integer BTN_BACK_TO_BACK_INFO = 10;
 constant integer BTN_AVAILABILITY_WINDOW = 11;
 constant integer BTN_BOOK_NEXT = 12;
+constant integer BTN_ATTENDEE_IMG[] = {13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+constant integer BTN_ATTENDEE_NAME[] = {23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
+constant integer BTN_ATTENDEES = 33;
 
 // UI re-render manager
 constant long UI_UPDATE_INTERVAL[] = {15000};
@@ -180,7 +186,7 @@ define_function render(char state) {
 		stack_var char nextInfoText[512];
 
 		if (nextId) {
-			nextInfoText = "'"', next.subject, '" begins in ', fuzzyTimeDelta(next.start), '.'";
+			nextInfoText = "'Next in use in ', fuzzyTimeDelta(next.start), '.'";
 		} else {
 			nextInfoText = 'No bookings currently scheduled for the rest of the day.';
 		}
@@ -197,7 +203,7 @@ define_function render(char state) {
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTimeDelta(current.end)");
 		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', current.start + timeOffset), ' - ', fmt_date('g:ia', current.end + timeOffset)");
 
-		// TODO set attendees
+		updateAttendees(current.attendees);
 
 		showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
 
@@ -209,9 +215,9 @@ define_function render(char state) {
 	case STATE_BOOKING_NEAR: {
 		setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, next.subject);
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTimeDelta(next.start)");
-		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', current.start + timeOffset), ' - ', fmt_date('g:ia', current.end + timeOffset)");
+		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', next.start + timeOffset), ' - ', fmt_date('g:ia',next.end + timeOffset)");
 
-		// TODO show attendees
+		updateAttendees(next.attendees);
 
 		showPopupEx(dvTp, POPUP_ACTIVE_INFO, PAGE_IN_USE);
 
@@ -256,6 +262,25 @@ define_function render(char state) {
 		amx_log(AMX_ERROR, 'Unhandled system state. Could not render UI.');
 	}
 
+	}
+}
+
+/**
+ * Update the attendee list shown on the UI.
+ *
+ * @param	attendees		an array of attendee names
+ */
+define_function updateAttendees(char attendees[][]) {
+	stack_var integer i;
+	
+	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
+		if (attendees[i] != '') {
+			// TODO set attendee images
+			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], attendees[i]);
+			showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
+		} else {
+			hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
+		}
 	}
 }
 
@@ -350,13 +375,7 @@ define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 		char responseText[],
 		RmsEventBookingResponse eventBookingResponse) {
 	setRmsRapidUpdateEnabled(false);
-
-	if (eventBookingResponse.isSuccessful &&
-			eventBookingResponse.location == locationTracker.location.id &&
-			eventBookingResponse.startDate == ldate) {
-		storeRmsBookingResponse(eventBookingResponse, todaysBookings);
-		redraw();
-	}
+	bookingTrackerHandleCreateResponse(eventBookingResponse);
 
 	// TODO handle create feedback
 }
