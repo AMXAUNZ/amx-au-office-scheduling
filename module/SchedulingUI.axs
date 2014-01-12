@@ -8,6 +8,7 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #INCLUDE 'TimeUtil';
 #INCLUDE 'String';
 #INCLUDE 'Unixtime'
+#INCLUDE 'ProfileImageManager';
 #INCLUDE 'RmsAssetLocationTracker';
 #INCLUDE 'RmsRapidUpdater';
 #INCLUDE 'DailyBookingTracker';
@@ -45,6 +46,9 @@ constant char POPUP_BOOK_NEXT[] = 'bookNext';
 
 // Sub page prefixs
 constant char SUBPAGE_ATTENDEE[] = '[attendee]';
+
+// Dynamic image resources
+constant char DYN_ATTENDEE[] = 'attendee';
 
 // Button addresses
 constant integer BTN_MEET_NOW = 1;
@@ -268,7 +272,7 @@ define_function updateAttendees(char attendees[][]) {
 	
 	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
 		if (attendees[i] != '') {
-			// TODO set attendee images
+			setProfileImage(dvTp, "DYN_ATTENDEE, itoa(i)", attendees[i]);
 			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], attendees[i]);
 			showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
 		} else {

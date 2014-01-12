@@ -138,6 +138,10 @@
 <FilePathName>include\DailyBookingTracker.axi</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="None" Type="Include"><Identifier>ProfileImageManager</Identifier>
+<FilePathName>include\ProfileImageManager.axi</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="None" Type="Include"><Identifier>RmsRapidUpdater</Identifier>
 <FilePathName>include\RmsRapidUpdater.axi</FilePathName>
 <Comments></Comments>
