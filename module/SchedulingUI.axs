@@ -153,7 +153,7 @@ define_function render(char state) {
 	stack_var event current;
 	stack_var event next;
 	stack_var slong timeOffset;
-	
+
 	currentId = getActiveBookingId();
 	if (currentId) {
 		current = todaysBookings[currentId];
@@ -162,13 +162,13 @@ define_function render(char state) {
 	if (nextId) {
 		next = todaysBookings[nextId];
 	}
-	
+
 	// FIXME
 	// Current this will render all times local to the master's timezone
 	// rather than the touch panel asset.
 	timeOffset = unixtime_utc_offset_hr * UNIXTIME_SECONDS_PER_HOUR +
 			unixtime_utc_offset_min * UNIXTIME_SECONDS_PER_MINUTE;
-	
+
 	switch (state) {
 
 	case STATE_OFFLINE: {
@@ -265,7 +265,7 @@ define_function render(char state) {
  */
 define_function updateAvailableBookingTimes() {
 	stack_var integer timeUntilNextBooking;
-	
+
 	timeUntilNextBooking = getMinutesUntilNextBooking();
 
 	setButtonEnabled(dvTp, BTN_TIME_SELECT[1], (timeUntilNextBooking > 10));
@@ -357,7 +357,7 @@ define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 		storeRmsBookingResponse(eventBookingResponse, todaysBookings);
 		redraw();
 	}
-	
+
 	// TODO handle create feedback
 }
 

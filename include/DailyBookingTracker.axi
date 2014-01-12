@@ -14,7 +14,7 @@ PROGRAM_NAME='DailyBookingTracker'
 
 define_variable
 
-// This can be resized as required, just bear in mind each event slot is a
+// This can be resized as required, just bare in mind each event slot is a
 // little piggy when it comes to memory.
 volatile Event todaysBookings[30];
 
@@ -61,7 +61,7 @@ define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
 define_function resyncDailyBookings() {
 	clearBookingList(todaysBookings);
 	RmsBookingsRequest(ldate, locationTracker.location.id);
-	
+
 	// Ideally this should be called from
 	// RmsEventSchedulingBookingsRecordResponse(..) when it's the last record
 	// however as of SDK v4.1.16 this appears to be broken and containes the
