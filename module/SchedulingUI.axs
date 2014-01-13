@@ -3,6 +3,7 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 
 #DEFINE INCLUDE_SCHEDULING_CREATE_RESPONSE_CALLBACK
 #DEFINE INCLUDE_TP_NFC_TAG_READ_CALLBACK
+#DEFINE INCLUDE_RESOURCE_LOAD_CALLBACK
 
 
 #INCLUDE 'TimeUtil';
@@ -48,7 +49,7 @@ constant char POPUP_BOOK_NEXT[] = 'bookNext';
 constant char SUBPAGE_ATTENDEE[] = '[attendee]';
 
 // Dynamic image resources
-constant char DYN_ATTENDEE[] = 'attendee';
+constant char DYN_ATTENDEE_PREFIX[] = 'attendee';
 
 // Button addresses
 constant integer BTN_MEET_NOW = 1;
@@ -268,16 +269,21 @@ define_function render(char state) {
  * @param	attendees		an array of attendee names
  */
 define_function updateAttendees(char attendees[][]) {
+	local_var char previousAttendees[BOOKING_MAX_ATTENDEES][BOOKING_MAX_NAME_LENGTH];
 	stack_var integer i;
-	
+
 	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
 		if (attendees[i] != '') {
-			setProfileImage(dvTp, "DYN_ATTENDEE, itoa(i)", attendees[i]);
-			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], attendees[i]);
+			if (attendees[i] != previousAttendees[i]) {
+				loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
+				setButtonText(dvTp, BTN_ATTENDEE_NAME[i], attendees[i]);
+			}
 			showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
 		} else {
 			hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
+			setButtonImage(dvTp, BTN_ATTENDEE_IMG[i], 'profile-placeholder.png');
 		}
+		previousAttendees[i] = attendees[i]
 	}
 }
 
@@ -392,6 +398,14 @@ define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 
 
 // Touch panel callbacks
+
+define_function TpResourceLoaded(char name[]) {
+	select {
+		active (string_starts_with(name, DYN_ATTENDEE_PREFIX)): {
+			setButtonImage(dvTp, BTN_ATTENDEE_IMG[atoi(name)], name);
+		}
+	}
+}
 
 define_function NfcTagRead(integer tagType, char uid[], integer uidLength) {
 

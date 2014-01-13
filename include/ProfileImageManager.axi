@@ -8,9 +8,8 @@ PROGRAM_NAME='ProfileImageManager'
 #INCLUDE 'String';
 
 
-// TODO build a Duet modudule that can do an MD5 hash of the email before
-// sending to external services as well as profile image lookup in AD if
-// appropriate.
+// TODO build a Duet modudule so that we can also look up external users with
+// a service such as Gravatar and/or LinkedIn
 
 
 /**
@@ -22,27 +21,14 @@ PROGRAM_NAME='ProfileImageManager'
  * @param	lookupKey	the key to utilise for the profile image source
  *						(name, email address, etc)
  */
-define_function setProfileImage(dev tp, char resource[], char key[]) {
-	stack_var char email[255];
+define_function loadProfileImage(dev tp, char resource[], char key[]) {
+	stack_var char fileName[128];
 	
-	if (isEmailAddress(key)) {
-		email = key;
-	} else {
-		email = "string_replace(key, ' ', '.'), '@amxaustralia.com.au'";
-	}
-	
-	setProfileImageFromEmail(tp, resource, email);
-}
+	filename = "string_replace(key, ' ', '.'), '.jpg'";
 
-define_function setProfileImageFromEmail(dev tp, char resource[], char email[]) {
-	send_command tp, "'^RMF-', resource, ',%P0%Havatars.io%Aemail%F', lower_string(trim(email))";
+	send_command tp, "'^RMF-', resource, ',%F', fileName";
+	send_command tp, "'^RFRP-', resource, ',once'";
 }
-
-define_function char isEmailAddress(char str[]) {
-	// This is super, super hacky (it's only temporary though...)
-	return find_string(str, '@', 2);
-}
-
 
 
 #END_IF // __PROFILE_IMAGE_MANAGER__
