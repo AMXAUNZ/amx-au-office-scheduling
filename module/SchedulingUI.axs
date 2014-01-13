@@ -6,9 +6,9 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #DEFINE INCLUDE_RESOURCE_LOAD_CALLBACK
 
 
-#INCLUDE 'TimeUtil';
 #INCLUDE 'String';
-#INCLUDE 'Unixtime'
+#INCLUDE 'Unixtime';
+#INCLUDE 'TimeUtil';
 #INCLUDE 'ProfileImageManager';
 #INCLUDE 'RmsAssetLocationTracker';
 #INCLUDE 'RmsRapidUpdater';
@@ -163,6 +163,8 @@ define_function render(char state) {
 	stack_var integer nextId;
 	stack_var event current;
 	stack_var event next;
+	stack_var slong timeNow;
+	stack_var slong timeOffset;
 
 	currentId = getActiveBookingId();
 	if (currentId) {
@@ -172,6 +174,12 @@ define_function render(char state) {
 	if (nextId) {
 		next = todaysBookings[nextId];
 	}
+	
+	// FIXME rather than using unixtime_now() this needs to use unixtime_offset
+	// with the offset of the client gateway in case the TZ has not been set on
+	// the master.
+	timeNow = unixtime_now();
+	timeOffset = getTimeOffset(timeNow, locationTracker.location.timezone);
 
 	switch (state) {
 
@@ -184,7 +192,7 @@ define_function render(char state) {
 		stack_var char nextInfoText[512];
 
 		if (nextId) {
-			nextInfoText = "'Next in use in ', fuzzyTimeDelta(next.start), '.'";
+			nextInfoText = "'Next in use in ', fuzzyTime(timeNow, next.start), '.'";
 		} else {
 			nextInfoText = 'No bookings currently scheduled for the rest of the day.';
 		}
@@ -198,8 +206,8 @@ define_function render(char state) {
 
 	case STATE_IN_USE: {
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, current.subject);
-		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTimeDelta(current.end)");
-		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', current.start + getTimeOffset()), ' - ', fmt_date('g:ia', current.end + getTimeOffset())");
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(timeNow, current.end)");
+		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', current.start + timeOffset), ' - ', fmt_date('g:ia', current.end + timeOffset)");
 
 		updateAttendees(current.attendees);
 
@@ -212,8 +220,8 @@ define_function render(char state) {
 
 	case STATE_BOOKING_NEAR: {
 		setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, next.subject);
-		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTimeDelta(next.start)");
-		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', next.start + getTimeOffset()), ' - ', fmt_date('g:ia',next.end + getTimeOffset())");
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTime(timeNow, next.start)");
+		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', next.start + timeOffset), ' - ', fmt_date('g:ia', next.end + timeOffset)");
 
 		updateAttendees(next.attendees);
 
@@ -234,7 +242,7 @@ define_function render(char state) {
 		}
 
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, current.subject);
-		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTimeDelta(current.end)");
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(timeNow, current.end)");
 		setButtonText(dvTp, BTN_AVAILABILITY_WINDOW, "'The room is available for ', availability, ' following the current meeting.'");
 
 		showPopupEx(dvTp, POPUP_BOOK_NEXT, PAGE_IN_USE);
@@ -246,7 +254,7 @@ define_function render(char state) {
 
 	case STATE_BOOKED_BACK_TO_BACK: {
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, current.subject);
-		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTimeDelta(current.end)");
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(timeNow, current.end)");
 		setButtonText(dvTp, BTN_BACK_TO_BACK_INFO, "'The room is reserved for "', next.subject, '" directly following this.'");
 
 		showPopupEx(dvTp, POPUP_BACK_TO_BACK, PAGE_IN_USE);
@@ -310,19 +318,6 @@ define_function updateAvailableBookingTimes() {
 }
 
 /**
- * Get the time offset required to convert between UTC and local time.
- *
- * @return				the time offset
- */
-define_function slong getTimeOffset() {
-	// FIXME
-	// Current this assume that the offset need is the local masters time. This
-	// needs to account for having the UI in a seperate TZ to the master.
-	return unixtime_utc_offset_hr * UNIXTIME_SECONDS_PER_HOUR +
-			unixtime_utc_offset_min * UNIXTIME_SECONDS_PER_MINUTE;
-}
-
-/**
  * Set the legnth that will be utilised by ad-hoc booking requests.
  */
 define_function setBookingRequestLength(integer minutes) {
@@ -370,10 +365,14 @@ define_function setOnline(char isOnline) {
  * @param	length		the booking length in minutes
  * @param	user		???
  */
-define_function createAdHocBooking(char startTime[8], integer length,
+define_function createBooking(slong startTime, integer length,
 		char user[]) {
-	RmsBookingCreate(ldate,
-			startTime,
+	stack_var slong offset;
+	// Booking request times appear to be in the TZ of the location the request
+	// is for.
+	offset = getTimeOffset(startTime, locationTracker.location.timezone);
+	RmsBookingCreate(unixtime_to_netlinx_ldate(startTime + offset),
+			unixtime_to_netlinx_time(startTime + offset),
 			length,
 			'Ad-hoc Meeting',
 			'Ad-hoc meeting created from touch panel booking system.',
@@ -414,18 +413,16 @@ define_function NfcTagRead(integer tagType, char uid[], integer uidLength) {
 	switch (getState()) {
 
 	case STATE_AVAILABLE: {
-		stack_var char requestTime[8];
-		requestTime = unixtime_to_netlinx_time(unixtime_now() + getTimeOffset());
-		createAdHocBooking(requestTime, bookingRequestLength, '');
+		// FIXME rather than using unixtime_now() this needs to use
+		// unixtime_offset with the offset of the client gateway
+		createBooking(unixtime_now(), bookingRequestLength, '');
 		break;
 	}
 
-	case STATE_BOOKING_ENDING:{
-		stack_var char requestTime[8];
+	case STATE_BOOKING_ENDING: {
 		stack_var Event current;
 		current = todaysBookings[getActiveBookingId()];
-		requestTime = unixtime_to_netlinx_time(current.end + getTimeOffset());
-		createAdHocBooking(requestTime, bookingRequestLength, '');
+		createBooking(current.end, bookingRequestLength, '');
 		break;
 	}
 

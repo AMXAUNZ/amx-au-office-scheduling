@@ -8,6 +8,7 @@ PROGRAM_NAME='DailyBookingTracker'
 #INCLUDE 'Unixtime';
 #INCLUDE 'String';
 #INCLUDE 'Math';
+#INCLUDE 'TimeUtil';
 #INCLUDE 'BookingManager';
 #INCLUDE 'RmsSchedulingApi';
 #INCLUDE 'RmsSchedulingEventListener';

@@ -1,6 +1,10 @@
 PROGRAM_NAME='TimeUtil'
 
 
+#IF_NOT_DEFINED __TIME_UTIL__
+#DEFINE __TIME_UTIL__
+
+
 #INCLUDE 'Unixtime';
 #INCLUDE 'Math';
 
@@ -8,6 +12,8 @@ PROGRAM_NAME='TimeUtil'
 define_constant
 
 FUZZY_TIME_RETURN_SIZE = 32;
+
+
 
 
 /**
@@ -81,16 +87,64 @@ define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
 }
 
 /**
- * Get the
- */
- /**
- * Convert a delta between now and a passed time value into a human readable
- * (and easily understandable) string.
+ * Get the time offset required to convert between UTC and a specific timezone
+ * formatted as per the java TZ's.
  *
- * @param	t			a unixtime time compare to
- * @return				a string containing the time difference between between
- *						now and 't'.
+ * @param	timezone	the TZ string to get the offset off
+ * @return				the time offset
  */
-define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTimeDelta(slong t) {
-	return fuzzyTime(unixtime_now(), t);
+define_function slong getTimeOffset(slong checkTime, char timezone[]) {
+	stack_var slong offset;
+
+	// FIXME this is only a temporary fix for AMX Australia offices, ideally
+	// we need something here that can handle any TZ (may need a Duet utility
+	// module for this)
+	#WARN 'Temporary timezone mapping functions in use'
+
+	switch (timezone) {
+	
+	case 'Australia/Melbourne': {
+		if (dstIsActive(checkTime, timezone)) {
+			offset = 11 * UNIXTIME_SECONDS_PER_HOUR;
+		} else {
+			offset = 10 * UNIXTIME_SECONDS_PER_HOUR;
+		}
+	}
+	
+	case 'Australia/Brisbane': {
+		offset = 10 * UNIXTIME_SECONDS_PER_HOUR;
+	}
+	
+	case 'Pacific/Auckland': {
+		if (dstIsActive(checkTime, timezone)) {
+			offset = 13 * UNIXTIME_SECONDS_PER_HOUR;
+		} else {
+			offset = 12 * UNIXTIME_SECONDS_PER_HOUR;
+		}
+	}
+	
+	}
+	
+	return offset;
 }
+
+// As above, this is temp
+define_function char dstIsActive(slong checkTime, char timezone[]) {
+	stack_var char dstActive;
+
+	switch (timezone) {
+	
+	case 'Australia/Melbourne': {		
+		dstActive = true;
+	}
+	
+	case 'Pacific/Auckland': {
+		dstActive = true;
+	}
+	
+	}
+	
+	return dstActive;
+}
+
+#END_IF // __TIME_UTIL__
