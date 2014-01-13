@@ -64,6 +64,7 @@ constant integer BTN_BOOK_NEXT = 12;
 constant integer BTN_ATTENDEE_IMG[] = {13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
 constant integer BTN_ATTENDEE_NAME[] = {23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
 constant integer BTN_ATTENDEES = 33;
+constant integer BTN_ONLINE_INDICATOR = 255;
 
 // UI re-render manager
 constant long UI_UPDATE_INTERVAL[] = {15000};
@@ -149,7 +150,9 @@ define_function redraw() {
 	// Throttle UI renders to 100ms
 	cancel_wait 'ui update';
 	wait 1 'ui update' {
-		render(getState());
+		if (device_id(dvTp)) {
+			render(getState());
+		}
 	}
 }
 
@@ -165,6 +168,8 @@ define_function render(char state) {
 	stack_var event next;
 	stack_var slong timeNow;
 	stack_var slong timeOffset;
+
+	on[dvTp, BTN_ONLINE_INDICATOR];
 
 	currentId = getActiveBookingId();
 	if (currentId) {
