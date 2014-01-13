@@ -7,6 +7,7 @@ PROGRAM_NAME='DailyBookingTracker'
 
 #INCLUDE 'Unixtime';
 #INCLUDE 'String';
+#INCLUDE 'Math';
 #INCLUDE 'BookingManager';
 #INCLUDE 'RmsSchedulingApi';
 #INCLUDE 'RmsSchedulingEventListener';
@@ -31,7 +32,7 @@ constant long DAILY_BOOKING_RESYNC_INTERVAL[] = {300000};
  */
 define_function char bookingHasTemporaryId(Event e) {
 	stack_var char tempId[BOOKING_MAX_ID_LENGTH];
-	
+
 	// As of SDK v4.1.16 RMS booking responses will come back with an id that
 	// is a concatination of what appears to be the location id, followed by a
 	// dash, the event start timestamp, another dash and the end timestamp.
@@ -44,13 +45,13 @@ define_function char bookingHasTemporaryId(Event e) {
 			send_string 0, 'Yep';
 			return true;
 		}
-		
+
 		active (length_string(e.externalId) == 3 &&
 				right_string(e.externalId, 1) == '-'): {
 			send_string 0, 'Yep';
-			return true;	
+			return true;
 		}
-		
+
 		active(1): {
 			send_string 0, 'Nope';
 			return false;
@@ -110,7 +111,7 @@ define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
 		updateBooking(e, bookingList, insertIndex);
 		return;
 	}
-	
+
 	// If that didn't work lets see if there is a booking with a temp ID we can
 	// update
 	insertIndex = getBookingAt(e.start, bookingList);
@@ -120,7 +121,7 @@ define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
 			return;
 		}
 	}
-	
+
 	// Otherwise insert as a freshn'
 	insertBooking(e, bookingList);
 }
@@ -185,8 +186,8 @@ define_function integer getMinutesUntilNextBooking() {
 	if (nextBooking == 0) {
 		return $ffff;
 	}
-	return type_cast((todaysBookings[nextBooking].start - timeNow) /
-			UNIXTIME_SECONDS_PER_MINUTE);
+	return type_cast(ceil(1.0 * (todaysBookings[nextBooking].start - timeNow) /
+			UNIXTIME_SECONDS_PER_MINUTE));
 }
 
 /**
@@ -203,8 +204,8 @@ define_function integer getMinutesUntilBookingEnd() {
 	if (activeBooking == 0) {
 		return 0;
 	}
-	return type_cast((todaysBookings[activeBooking].end - timeNow) /
-			UNIXTIME_SECONDS_PER_MINUTE);
+	return type_cast(ceil(1.0 * (todaysBookings[activeBooking].end - timeNow) /
+			UNIXTIME_SECONDS_PER_MINUTE));
 }
 
 define_function bookingTrackerHandleCreateResponse(RmsEventBookingResponse response) {

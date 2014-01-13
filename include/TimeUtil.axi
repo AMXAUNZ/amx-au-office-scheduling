@@ -23,7 +23,7 @@ FUZZY_TIME_RETURN_SIZE = 32;
 define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
 	stack_var long delta;
 	stack_var char ret[FUZZY_TIME_RETURN_SIZE];
-	
+
 	delta = abs_value(t2 - t1);
 
 	select {
@@ -34,7 +34,7 @@ define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
 			ret = '1 minute';
 		}
 		active (delta <= 25 * UNIXTIME_SECONDS_PER_MINUTE): {
-			ret = "itoa(round(delta / UNIXTIME_SECONDS_PER_MINUTE)), ' minutes'";
+			ret = "itoa(ceil(1.0 * delta / UNIXTIME_SECONDS_PER_MINUTE)), ' minutes'";
 		}
 		active (delta <= 40 * UNIXTIME_SECONDS_PER_MINUTE): {
 			ret = 'half an hour';
@@ -46,7 +46,7 @@ define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
 			ret = '1 and a half hours';
 		}
 		active (delta < 20 * UNIXTIME_SECONDS_PER_HOUR): {
-			ret = "itoa(round(delta / UNIXTIME_SECONDS_PER_HOUR)), ' hours'";
+			ret = "itoa(ceil(1.0 * delta / UNIXTIME_SECONDS_PER_HOUR)), ' hours'";
 		}
 		active (delta < 30 * UNIXTIME_SECONDS_PER_HOUR): {
 			ret = '1 day';
@@ -58,7 +58,7 @@ define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
 			ret = '2 days';
 		}
 		active (delta < 30 * UNIXTIME_SECONDS_PER_DAY): {
-			ret = "itoa(round(delta / UNIXTIME_SECONDS_PER_DAY)), ' days'";
+			ret = "itoa(ceil(1.0 * delta / UNIXTIME_SECONDS_PER_DAY)), ' days'";
 		}
 		active (delta < 40 * UNIXTIME_SECONDS_PER_DAY): {
 			ret = '1 month';
@@ -70,13 +70,13 @@ define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
 			ret = '2 months';
 		}
 		active (delta <= 12 * (UNIXTIME_SECONDS_PER_YEAR / 12)): {
-			ret = "itoa(round(delta / (UNIXTIME_SECONDS_PER_YEAR / 12))), ' months'";
+			ret = "itoa(ceil(1.0 * delta / (UNIXTIME_SECONDS_PER_YEAR / 12))), ' months'";
 		}
 		active (1): {
 			ret = 'more than a year';
 		}
 	}
-	
+
 	return ret;
 }
 
