@@ -18,9 +18,17 @@ define_module 'RmsNetLinxAdapter_dr4_0_0' mdlRms(vdvRms);
 
 define_module 'RmsControlSystemMonitor' mdlRmsControlSys(vdvRms, dvMaster);
 
-define_module 'RmsTouchPanelMonitor' mdlRmsGCBoardroom(vdvRMS, dvTPGCBoardroom);
+define_module 'RmsTouchPanelMonitor' mdlRmsGCBoardroomTp(vdvRMS, dvTPGCBoardroom);
+define_module 'RmsTouchPanelMonitor' mdlRmsGCMeetingTp(vdvRMS, dvTPGCMeeting);
+define_module 'RmsTouchPanelMonitor' mdlRmsGCTrainingTp(vdvRMS, dvTPGCTraining);
+define_module 'RmsTouchPanelMonitor' mdlRmsSydBoardroomTp(vdvRMS, dvTPSydBoardroom);
+define_module 'RmsTouchPanelMonitor' mdlRmsSydTrainingTp(vdvRMS, dvTPSydTraining);
 
-define_module 'SchedulingUI' mdlGCBoardroom(vdvRms, dvTPGCBoardroom);
+define_module 'SchedulingUI' mdlGCBoardroomUi(vdvRms, dvTPGCBoardroom);
+define_module 'SchedulingUI' mdlGCMeetingUi(vdvRms, dvTPGCMeeting);
+define_module 'SchedulingUI' mdlGCTrainingUi(vdvRms, dvTPGCTraining);
+define_module 'SchedulingUI' mdlSydBoardroomUi(vdvRms, dvTPSydBoardroom);
+define_module 'SchedulingUI' mdlSydTrainingUi(vdvRms, dvTPSydTraining);
 
 #WARN 'logger enabled for debug'
 define_module 'RmsSchedulingEventLogger' mdlLogger(vdvRms);

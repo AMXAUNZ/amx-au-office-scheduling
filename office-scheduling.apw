@@ -227,6 +227,12 @@
 <Comments></Comments>
 <DeviceMap DevAddr="dvTPGCBoardroom"><DevName>dvTPGCBoardroom</DevName>
 </DeviceMap>
+<DeviceMap DevAddr="dvTPGCMeeting"><DevName>dvTPGCMeeting</DevName>
+</DeviceMap>
+<DeviceMap DevAddr="dvTPSydBoardroom"><DevName>dvTPSydBoardroom</DevName>
+</DeviceMap>
+<DeviceMap DevAddr="dvTPSydTraining"><DevName>dvTPSydTraining</DevName>
+</DeviceMap>
 </File>
 </System>
 </Project>
