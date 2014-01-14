@@ -31,6 +31,7 @@ constant char STATE_IN_USE = 3;
 constant char STATE_BOOKING_NEAR = 4;
 constant char STATE_BOOKING_ENDING = 5;
 constant char STATE_BOOKED_BACK_TO_BACK = 6;
+constant char STATE_RESERVING = 7;
 
 // Page names
 constant char PAGE_BLANK[] = 'blank';
@@ -38,6 +39,7 @@ constant char PAGE_CONNECTED[] = 'connected';
 constant char PAGE_CONNECTING[] = 'connecting';
 constant char PAGE_AVAILABLE[] = 'available';
 constant char PAGE_IN_USE[] = 'inUse';
+constant char PAGE_RESERVING[] = 'reserving';
 
 // Popups
 constant char POPUP_CREATE[] = 'create';
@@ -76,6 +78,10 @@ constant integer BOOKING_REQUEST_LENGTHS[] = {10, 20, 30, 60};
 
 volatile integer bookingRequestLength;
 
+volatile char awaitingMeetNowConfirm;
+volatile char awaitingBookNextConfirm;
+volatile char awaitingCreateResponse;
+
 
 /**
  * Initialise module variables that cannot be assisgned at compile time.
@@ -106,8 +112,12 @@ define_function char getState() {
 			state = STATE_OFFLINE;
 		}
 
+		active (awaitingCreateResponse): {
+			state = STATE_RESERVING;
+		}
+
 		// Meeting approaching
-		active (!isBooked && minutesUntilNextBooking <= 5): {
+		active (!isBooked && minutesUntilNextBooking <= 10): {
 			state = STATE_BOOKING_NEAR;
 		}
 
@@ -188,6 +198,11 @@ define_function render(char state) {
 
 	case STATE_OFFLINE: {
 		setPageAnimated(dvTp, PAGE_CONNECTING, 'fade', 0, 20);
+		break;
+	}
+
+	case STATE_RESERVING: {
+		setPageAnimated(dvTp, PAGE_RESERVING, 'fade', 0, 5);
 		break;
 	}
 
@@ -378,9 +393,45 @@ define_function createBooking(slong startTime, integer length,
 			'Ad-hoc meeting created from touch panel booking system.',
 			locationTracker.location.id);
 
+	awaitingCreateResponse = true;
+
 	// Rather than waiting for the next heartbeat for a response lets accelerate
 	// things a little bit so we can keep the UI nice and fast.
 	setRmsRapidUpdateEnabled(true);
+}
+
+/**
+ * Sets the pre-selected booking length.
+ */
+define_function setDefaultBookingLength() {
+	// Default to a 20 minute meeting, or if time doesn't allow fall back to
+	// 10 minutes
+	if (getMinutesUntilNextBooking() > BOOKING_REQUEST_LENGTHS[2]) {
+		setBookingRequestLength(BOOKING_REQUEST_LENGTHS[2]);
+	} else {
+		setBookingRequestLength(BOOKING_REQUEST_LENGTHS[1]);
+	}
+}
+
+/**
+ * Submit a 'meet now' request for the passed user.
+ *
+ * @param	user		???
+ */
+define_function meetNow(char user[]) {
+	createBooking(unixtime_now(), bookingRequestLength, '');
+}
+
+
+/**
+ * Submit a 'book next' request for the passed user.
+ *
+ * @param	user		???
+ */
+define_function bookNext(char user[]) {
+	stack_var Event current;
+	current = todaysBookings[getActiveBookingId()];
+	createBooking(current.end, bookingRequestLength, '');
 }
 
 
@@ -390,9 +441,8 @@ define_function RmsEventSchedulingCreateResponse(char isDefaultLocation,
 		char responseText[],
 		RmsEventBookingResponse eventBookingResponse) {
 	setRmsRapidUpdateEnabled(false);
+	awaitingCreateResponse = false;
 	bookingTrackerHandleCreateResponse(eventBookingResponse);
-
-	// TODO handle create feedback
 }
 
 
@@ -407,24 +457,17 @@ define_function TpResourceLoaded(char name[]) {
 }
 
 define_function NfcTagRead(integer tagType, char uid[], integer uidLength) {
-
-	// TODO lookup user
-
-	switch (getState()) {
-
-	case STATE_AVAILABLE: {
-		// FIXME rather than using unixtime_now() this needs to use
-		// unixtime_offset with the offset of the client gateway
-		createBooking(unixtime_now(), bookingRequestLength, '');
-		break;
+	if (awaitingMeetNowConfirm) {
+		meetNow('');
+		awaitingMeetNowConfirm = false;
+		redraw();
+	} else if (awaitingBookNextConfirm) {
+		bookNext('');
+		awaitingMeetNowConfirm = false;
+		redraw();
 	}
+}
 
-	case STATE_BOOKING_ENDING: {
-		stack_var Event current;
-		current = todaysBookings[getActiveBookingId()];
-		createBooking(current.end, bookingRequestLength, '');
-		break;
-	}
 
 // Location tracker callbacks
 
@@ -469,19 +512,35 @@ timeline_event[UI_UPDATE_TL] {
 	redraw();
 }
 
-button_event[dvTp, BTN_MEET_NOW]
+button_event[dvTp, BTN_MEET_NOW] {
+
+	push :{
+		updateAvailableBookingTimes()
+		setDefaultBookingLength();
+		showPopup(dvTp, POPUP_CREATE);
+		awaitingMeetNowConfirm = true;
+		cancel_wait 'Meet now confirm'
+		wait 300 'Meet now confirm' {
+			awaitingMeetNowConfirm = false;
+			hidePopup(dvTp, POPUP_CREATE);
+		}
+	}
+
+}
+
 button_event[dvTp, BTN_BOOK_NEXT] {
 
 	push: {
-		// Default to a 20 minute meeting, or if time doesn't allow fall back to
-		// 10 minutes
-		if (getMinutesUntilNextBooking() > BOOKING_REQUEST_LENGTHS[2]) {
-			setBookingRequestLength(BOOKING_REQUEST_LENGTHS[2]);
-		} else {
-			setBookingRequestLength(BOOKING_REQUEST_LENGTHS[1]);
+		updateAvailableBookingTimes();
+		setDefaultBookingLength();
+		showPopup(dvTp, POPUP_CREATE);
+		awaitingBookNextConfirm = true;
+		cancel_wait 'Book next confirm'
+		wait 300 'Book next confirm' {
+			awaitingBookNextConfirm = false;
+			hidePopup(dvTp, POPUP_CREATE);
 		}
 	}
-}
 
 }
 
