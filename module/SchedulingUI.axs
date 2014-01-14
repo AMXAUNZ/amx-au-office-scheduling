@@ -4,6 +4,7 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #DEFINE INCLUDE_SCHEDULING_CREATE_RESPONSE_CALLBACK
 #DEFINE INCLUDE_TP_NFC_TAG_READ_CALLBACK
 #DEFINE INCLUDE_RESOURCE_LOAD_CALLBACK
+#DEFINE LOCATION_TRACKER_UPDATE_CALLBACK
 
 
 #INCLUDE 'String';
@@ -179,7 +180,7 @@ define_function render(char state) {
 	if (nextId) {
 		next = todaysBookings[nextId];
 	}
-	
+
 	// FIXME rather than using unixtime_now() this needs to use unixtime_offset
 	// with the offset of the client gateway in case the TZ has not been set on
 	// the master.
@@ -431,8 +432,10 @@ define_function NfcTagRead(integer tagType, char uid[], integer uidLength) {
 		break;
 	}
 
-	}
+// Location tracker callbacks
 
+define_function locationTrackerUpdated(RmsLocation location) {
+	resyncDailyBookings();
 }
 
 
@@ -484,6 +487,7 @@ button_event[dvTp, BTN_BOOK_NEXT] {
 			setBookingRequestLength(BOOKING_REQUEST_LENGTHS[1]);
 		}
 	}
+}
 
 }
 
