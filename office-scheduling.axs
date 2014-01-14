@@ -30,16 +30,3 @@ define_module 'SchedulingUI' mdlGCTrainingUi(vdvRms, dvTPGCTraining);
 define_module 'SchedulingUI' mdlSydBoardroomUi(vdvRms, dvTPSydBoardroom);
 define_module 'SchedulingUI' mdlSydTrainingUi(vdvRms, dvTPSydTraining);
 
-#WARN 'logger enabled for debug'
-define_module 'RmsSchedulingEventLogger' mdlLogger(vdvRms);
-
-
-define_event
-
-data_event[vdvRms] {
-
-	online: {
-		send_command data.device, '@LOG.SCHEDULING.EVENTS-true';
-	}
-
-}
