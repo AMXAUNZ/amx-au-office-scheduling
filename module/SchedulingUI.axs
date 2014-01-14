@@ -50,6 +50,7 @@ constant char POPUP_BOOK_NEXT[] = 'bookNext';
 
 // Sub page prefixs
 constant char SUBPAGE_ATTENDEE[] = '[attendee]';
+constant char SUBPAGE_BOOKING[] = '[booking]';
 
 // Dynamic image resources
 constant char DYN_ATTENDEE_PREFIX[] = 'attendee';
@@ -67,6 +68,9 @@ constant integer BTN_BOOK_NEXT = 12;
 constant integer BTN_ATTENDEE_IMG[] = {13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
 constant integer BTN_ATTENDEE_NAME[] = {23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
 constant integer BTN_ATTENDEES = 33;
+constant integer BTN_BOOKING_NAME[] = {34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48};
+constant integer BTN_BOOKING_TIME[] = {49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63};
+constant integer BTN_BOOKINGS = 64;
 constant integer BTN_ONLINE_INDICATOR = 255;
 
 // UI re-render manager
@@ -194,6 +198,8 @@ define_function render(char state) {
 	timeNow = unixtime_now();
 	timeOffset = getTimeOffset();
 
+	updateBookingList(todaysBookings);
+
 	switch (state) {
 
 	case STATE_OFFLINE: {
@@ -305,6 +311,29 @@ define_function updateAttendees(char attendees[][]) {
 		} else {
 			hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
 			setButtonImage(dvTp, BTN_ATTENDEE_IMG[i], 'profile-placeholder.png');
+		}
+	}
+}
+
+
+/**
+ * Update the todays bookings list shown on the UI.
+ *
+ * @param	attendees		an array of attendee names
+ */
+define_function updateBookingList(Event bookings[]) {
+	stack_var integer i;
+	stack_var slong timeOffset;
+
+	timeOffset = getTimeOffset();
+
+	for (i = max_length_array(BTN_BOOKING_NAME); i; i--) {
+		if (bookings[i].start) {
+			setButtonText(dvTp, BTN_BOOKING_NAME[i], bookings[i].subject);
+			setButtonText(dvTp, BTN_BOOKING_TIME[i], "fmt_date('g:ia', bookings[i].start + timeOffset), ' - ', fmt_date('g:ia', bookings[i].end + timeOffset)");
+			showSubPage(dvTp, BTN_BOOKINGS, "SUBPAGE_BOOKING, itoa(i)");
+		} else {
+			hideSubPage(dvTp, BTN_BOOKINGS, "SUBPAGE_BOOKING, itoa(i)");
 		}
 	}
 }
