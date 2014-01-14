@@ -280,21 +280,17 @@ define_function render(char state) {
  * @param	attendees		an array of attendee names
  */
 define_function updateAttendees(char attendees[][]) {
-	local_var char previousAttendees[BOOKING_MAX_ATTENDEES][BOOKING_MAX_NAME_LENGTH];
 	stack_var integer i;
 
 	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
 		if (attendees[i] != '') {
-			if (attendees[i] != previousAttendees[i]) {
-				loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
-				setButtonText(dvTp, BTN_ATTENDEE_NAME[i], attendees[i]);
-			}
+			loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
+			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], attendees[i]);
 			showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
 		} else {
 			hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
 			setButtonImage(dvTp, BTN_ATTENDEE_IMG[i], 'profile-placeholder.png');
 		}
-		previousAttendees[i] = attendees[i]
 	}
 }
 
