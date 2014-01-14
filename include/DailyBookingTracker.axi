@@ -39,22 +39,17 @@ define_function char bookingHasTemporaryId(Event e) {
 	// dash, the event start timestamp, another dash and the end timestamp.
 	// Additionally in a create response the ID appears to just contain a two
 	// digit number followed by a dash.
-	tempId = "'-', itoa(e.start), '000-', itoa(e.end), '000'";
-
 	select {
 		active(right_string(e.externalId, length_string(tempId)) == tempId): {
-			send_string 0, 'Yep';
 			return true;
 		}
 
 		active (length_string(e.externalId) == 3 &&
 				right_string(e.externalId, 1) == '-'): {
-			send_string 0, 'Yep';
 			return true;
 		}
 
 		active(1): {
-			send_string 0, 'Nope';
 			return false;
 		}
 	}
@@ -71,9 +66,16 @@ define_function char bookingHasTemporaryId(Event e) {
  */
 define_function rmsBookingResponseToEvent(RmsEventBookingResponse booking,
 		Event e) {
+	stack_var slong timeOffset;
+
 	e.externalId = booking.bookingId;
+
+	// FIXME it appears that RMS responses contain the date and times in the
+	// local TZ of the location associated with the booking currently this will
+	// break if this differs to the TZ of the master
 	e.start = unixtime(booking.startDate, booking.startTime);
 	e.end = unixtime(booking.endDate, booking.endTime);
+
 	if (booking.subject != 'N/A') {
 		e.subject = booking.subject;
 	}

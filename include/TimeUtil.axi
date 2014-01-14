@@ -87,64 +87,13 @@ define_function char[FUZZY_TIME_RETURN_SIZE] fuzzyTime(slong t1, slong t2) {
 }
 
 /**
- * Get the time offset required to convert between UTC and a specific timezone
- * formatted as per the java TZ's.
+ * Get's the current master UTC time offset.
  *
- * @param	timezone	the TZ string to get the offset off
- * @return				the time offset
+ * @return			the current time offset of the master in second
  */
-define_function slong getTimeOffset(slong checkTime, char timezone[]) {
-	stack_var slong offset;
-
-	// FIXME this is only a temporary fix for AMX Australia offices, ideally
-	// we need something here that can handle any TZ (may need a Duet utility
-	// module for this)
-	#WARN 'Temporary timezone mapping functions in use'
-
-	switch (timezone) {
-	
-	case 'Australia/Melbourne': {
-		if (dstIsActive(checkTime, timezone)) {
-			offset = 11 * UNIXTIME_SECONDS_PER_HOUR;
-		} else {
-			offset = 10 * UNIXTIME_SECONDS_PER_HOUR;
-		}
-	}
-	
-	case 'Australia/Brisbane': {
-		offset = 10 * UNIXTIME_SECONDS_PER_HOUR;
-	}
-	
-	case 'Pacific/Auckland': {
-		if (dstIsActive(checkTime, timezone)) {
-			offset = 13 * UNIXTIME_SECONDS_PER_HOUR;
-		} else {
-			offset = 12 * UNIXTIME_SECONDS_PER_HOUR;
-		}
-	}
-	
-	}
-	
-	return offset;
+define_function slong getTimeOffset() {
+	return (unixtime_utc_offset_hr * 3600) + (unixtime_utc_offset_min * 60)
 }
 
-// As above, this is temp
-define_function char dstIsActive(slong checkTime, char timezone[]) {
-	stack_var char dstActive;
-
-	switch (timezone) {
-	
-	case 'Australia/Melbourne': {		
-		dstActive = true;
-	}
-	
-	case 'Pacific/Auckland': {
-		dstActive = true;
-	}
-	
-	}
-	
-	return dstActive;
-}
 
 #END_IF // __TIME_UTIL__

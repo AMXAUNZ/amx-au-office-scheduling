@@ -69,7 +69,7 @@ constant integer BTN_ONLINE_INDICATOR = 255;
 
 // UI re-render manager
 constant long UI_UPDATE_INTERVAL[] = {15000};
-constant long UI_UPDATE_TL = 1;
+constant long UI_UPDATE_TL = 3478;
 
 // Options available for 'meet now' and 'book next' inital meeting lengths
 constant integer BOOKING_REQUEST_LENGTHS[] = {10, 20, 30, 60};
@@ -181,11 +181,8 @@ define_function render(char state) {
 		next = todaysBookings[nextId];
 	}
 
-	// FIXME rather than using unixtime_now() this needs to use unixtime_offset
-	// with the offset of the client gateway in case the TZ has not been set on
-	// the master.
 	timeNow = unixtime_now();
-	timeOffset = getTimeOffset(timeNow, locationTracker.location.timezone);
+	timeOffset = getTimeOffset();
 
 	switch (state) {
 
@@ -367,16 +364,17 @@ define_function setOnline(char isOnline) {
 /**
  * Creates an adhoc booking.
  *
- * @param	startTime	the booking start time in the form HH:MM:SS
+ * @param	startTime	the booking start
  * @param	length		the booking length in minutes
  * @param	user		???
  */
 define_function createBooking(slong startTime, integer length,
 		char user[]) {
 	stack_var slong offset;
+
 	// Booking request times appear to be in the TZ of the location the request
 	// is for.
-	offset = getTimeOffset(startTime, locationTracker.location.timezone);
+	offset = getTimeOffset();
 	RmsBookingCreate(unixtime_to_netlinx_ldate(startTime + offset),
 			unixtime_to_netlinx_time(startTime + offset),
 			length,
