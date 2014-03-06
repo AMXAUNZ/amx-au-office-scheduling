@@ -120,7 +120,7 @@
 <SysID>0</SysID>
 <TransSerial>COM3,38400,8,None,1,None</TransSerial>
 <TransModem></TransModem>
-<TransTCPIP>192.168.3.37:1319:1:Dev NI::</TransTCPIP>
+<TransTCPIP>AV-SYD-NI700.amx.local:1319:1:Sydney scheduling NI::</TransTCPIP>
 <VirtualNetLinxMasterFlag>0</VirtualNetLinxMasterFlag>
 <VNMRestoreIPSettings>192.168.1.3:1319:1:Temp::</VNMRestoreIPSettings>
 <VNMSystemID>1</VNMSystemID>
@@ -225,13 +225,11 @@
 <File CompileType="None" Type="TP4"><Identifier>scheduling</Identifier>
 <FilePathName>ui\scheduling.TP4</FilePathName>
 <Comments></Comments>
-<DeviceMap DevAddr="dvTPGCBoardroom"><DevName>dvTPGCBoardroom</DevName>
+<DeviceMap DevAddr="dvTPBoardroom"><DevName>dvTPBoardroom</DevName>
 </DeviceMap>
-<DeviceMap DevAddr="dvTPGCMeeting"><DevName>dvTPGCMeeting</DevName>
+<DeviceMap DevAddr="dvTPMeeting"><DevName>dvTPMeeting</DevName>
 </DeviceMap>
-<DeviceMap DevAddr="dvTPSydBoardroom"><DevName>dvTPSydBoardroom</DevName>
-</DeviceMap>
-<DeviceMap DevAddr="dvTPSydTraining"><DevName>dvTPSydTraining</DevName>
+<DeviceMap DevAddr="dvTPTraining"><DevName>dvTPTraining</DevName>
 </DeviceMap>
 </File>
 </System>
