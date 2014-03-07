@@ -29,6 +29,16 @@ structure Event {
     CHAR attendees[BOOKING_MAX_ATTENDEES][BOOKING_MAX_NAME_LENGTH];
 }
 
+/**
+ * Check if two booking references are equivelent.
+ *
+ * @param	b1			the first booking to compare
+ * @param	b2			a booking to compare to b1
+ * @return				a boolean, true if b1 == b2
+ */
+define_function char bookingIsEqual(Event b1, Event b2) {
+	return b1.externalId == b2.externalId;
+}
 
 /**
  * Get the booking id that intersects with a specific time.
