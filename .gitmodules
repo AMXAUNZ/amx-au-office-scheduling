@@ -1,3 +1,12 @@
-[submodule "lib/RMS"]
-	path = lib/RMS
+[submodule "lib/rms-tools"]
+	path = lib/rms-tools
+	url = https://github.com/AMXAUNZ/rms-tools.git
+[submodule "lib/rms-sdk"]
+	path = lib/rms-sdk
 	url = https://github.com/KimBurgess/rms-sdk.git
+[submodule "lib/ncl"]
+	path = lib/ncl
+	url = https://github.com/KimBurgess/netlinx-common-libraries.git
+[submodule "lib/tp"]
+	path = lib/tp
+	url = https://github.com/AMXAUNZ/touch-panel-library.git
