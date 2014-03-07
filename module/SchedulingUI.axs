@@ -304,25 +304,67 @@ define_function render(char state) {
 }
 
 /**
+ * Clears the attendee list shown on the UI.
+ *
+ */
+define_function clearAttendees() {
+	stack_var integer i;
+
+	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
+		hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
+		setButtonImage(dvTp, BTN_ATTENDEE_IMG[i], 'profile-placeholder.png');
+	}
+}
+
+/**
  * Update the attendee list shown on the UI.
  *
  * @param	attendees		an array of attendee names
  */
 define_function updateAttendees(char attendees[][]) {
 	stack_var integer i;
-
-	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
-		if (attendees[i] != '') {
-			loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
-			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], string_truncate(attendees[i], MAX_ATTENDEE_NAME_LENGTH));
-			showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
-		} else {
-			hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
-			setButtonImage(dvTp, BTN_ATTENDEE_IMG[i], 'profile-placeholder.png');
+	stack_var char updateRequired;
+	local_var char lastUpdate[BOOKING_MAX_ATTENDEES][MAX_ATTENDEE_NAME_LENGTH];
+	
+	if (length_array(attendees) = 0) {
+		updateRequired = true;
+	} else if (length_array(attendees) != length_array(lastUpdate)) {
+		updateRequired = true;
+	} else {
+		for (i = length_array(attendees); i; i--) {
+			if (attendees[] != lastUpdate[i]) {
+				updateRequired = true;
+			}
 		}
+	}
+	
+	lastUpdate = attendees;
+	
+	if (!updateRequired) {
+		return;
+	}
+	
+	clearAttendees();
+
+	for (i = length_array(attendees); i; i--) {
+		loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
+		setButtonText(dvTp, BTN_ATTENDEE_NAME[i], string_truncate(attendees[i], MAX_ATTENDEE_NAME_LENGTH));
+		showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
 	}
 }
 
+/**
+ * Update the todays bookings list shown on the UI.
+ *
+ * @param	attendees		an array of attendee names
+ */
+define_function clearUIBookingList() {
+	stack_var integer i;
+
+	for (i = max_length_array(BTN_BOOKING_NAME); i; i--) {
+		hideSubPage(dvTp, BTN_BOOKINGS, "SUBPAGE_BOOKING, itoa(i)");
+	}
+}
 
 /**
  * Update the todays bookings list shown on the UI.
@@ -332,17 +374,36 @@ define_function updateAttendees(char attendees[][]) {
 define_function updateBookingList(Event bookings[]) {
 	stack_var integer i;
 	stack_var slong timeOffset;
+	stack_var char updateRequired;
+	local_var Event lastUpdate[MAX_DAILY_BOOKINGS];
+
+	if (length_array(bookings) = 0) {
+		updateRequired = true;
+	} else if (length_array(bookings) != length_array(lastUpdate)) {
+		updateRequired = true;
+	} else {
+		for (i = length_array(bookings); i; i--) {
+			if (!bookingIsEqual(bookings[i], lastUpdate[i])) {
+				updateRequired = true;
+				break;
+			}
+		}
+	}
+	
+	lastUpdate = bookings;
+	
+	if (!updateRequired) {
+		return;
+	}
+	
+	clearUIBookingList();
 
 	timeOffset = getTimeOffset();
 
-	for (i = max_length_array(BTN_BOOKING_NAME); i; i--) {
-		if (bookings[i].start) {
-			setButtonText(dvTp, BTN_BOOKING_NAME[i], string_truncate(bookings[i].subject, MAX_MEETING_LIST_NAME_LENGTH));
-			setButtonText(dvTp, BTN_BOOKING_TIME[i], "fmt_date('g:ia', bookings[i].start + timeOffset), ' - ', fmt_date('g:ia', bookings[i].end + timeOffset)");
-			showSubPage(dvTp, BTN_BOOKINGS, "SUBPAGE_BOOKING, itoa(i)");
-		} else {
-			hideSubPage(dvTp, BTN_BOOKINGS, "SUBPAGE_BOOKING, itoa(i)");
-		}
+	for (i = length_array(bookings); i; i--) {
+		setButtonText(dvTp, BTN_BOOKING_NAME[i], string_truncate(bookings[i].subject, MAX_MEETING_LIST_NAME_LENGTH));
+		setButtonText(dvTp, BTN_BOOKING_TIME[i], "fmt_date('g:ia', bookings[i].start + timeOffset), ' - ', fmt_date('g:ia', bookings[i].end + timeOffset)");
+		showSubPage(dvTp, BTN_BOOKINGS, "SUBPAGE_BOOKING, itoa(i)");
 	}
 }
 
