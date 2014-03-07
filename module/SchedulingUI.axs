@@ -80,6 +80,14 @@ constant long UI_UPDATE_TL = 3478;
 // Options available for 'meet now' and 'book next' inital meeting lengths
 constant integer BOOKING_REQUEST_LENGTHS[] = {10, 20, 30, 60};
 
+// Variable text character length
+// We're not using a monospace font so this is super hacky, ideally we need to
+// look at individual characters, sum the widths and also account for word
+// wrapping on multi line buttons, but this will do for now...
+constant integer MAX_MEETING_NAME_LENGTH = 25;
+constant integer MAX_ATTENDEE_NAME_LENGTH = 28;
+constant integer MAX_MEETING_LIST_NAME_LENGTH = 32;
+
 volatile integer bookingRequestLength;
 
 volatile char awaitingMeetNowConfirm;
@@ -229,7 +237,7 @@ define_function render(char state) {
 	}
 
 	case STATE_IN_USE: {
-		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, current.subject);
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, string_truncate(current.subject, MAX_MEETING_NAME_LENGTH));
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(timeNow, current.end)");
 		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', current.start + timeOffset), ' - ', fmt_date('g:ia', current.end + timeOffset)");
 
@@ -243,7 +251,7 @@ define_function render(char state) {
 	}
 
 	case STATE_BOOKING_NEAR: {
-		setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, next.subject);
+		setButtonText(dvTP, BTN_ACTIVE_MEETING_NAME, string_truncate(next.subject, MAX_MEETING_NAME_LENGTH));
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Starts in ', fuzzyTime(timeNow, next.start)");
 		setButtonText(dvTp, BTN_ACTIVE_TIMES, "fmt_date('g:ia', next.start + timeOffset), ' - ', fmt_date('g:ia', next.end + timeOffset)");
 
@@ -265,7 +273,7 @@ define_function render(char state) {
 			availability = 'the rest of the day';
 		}
 
-		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, current.subject);
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, string_truncate(current.subject, MAX_MEETING_NAME_LENGTH));
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(timeNow, current.end)");
 		setButtonText(dvTp, BTN_AVAILABILITY_WINDOW, "'The room is available for ', availability, ' following the current meeting.'");
 
@@ -277,7 +285,7 @@ define_function render(char state) {
 	}
 
 	case STATE_BOOKED_BACK_TO_BACK: {
-		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, current.subject);
+		setButtonText(dvTp, BTN_ACTIVE_MEETING_NAME, string_truncate(current.subject, MAX_MEETING_NAME_LENGTH));
 		setButtonText(dvTp, BTN_ACTIVE_MEETING_TIMER, "'Ends in ', fuzzyTime(timeNow, current.end)");
 		setButtonText(dvTp, BTN_BACK_TO_BACK_INFO, "'The room is reserved for "', next.subject, '" directly following this.'");
 
@@ -306,7 +314,7 @@ define_function updateAttendees(char attendees[][]) {
 	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
 		if (attendees[i] != '') {
 			loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
-			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], attendees[i]);
+			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], string_truncate(attendees[i], MAX_ATTENDEE_NAME_LENGTH));
 			showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
 		} else {
 			hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
@@ -329,7 +337,7 @@ define_function updateBookingList(Event bookings[]) {
 
 	for (i = max_length_array(BTN_BOOKING_NAME); i; i--) {
 		if (bookings[i].start) {
-			setButtonText(dvTp, BTN_BOOKING_NAME[i], bookings[i].subject);
+			setButtonText(dvTp, BTN_BOOKING_NAME[i], string_truncate(bookings[i].subject, MAX_MEETING_LIST_NAME_LENGTH));
 			setButtonText(dvTp, BTN_BOOKING_TIME[i], "fmt_date('g:ia', bookings[i].start + timeOffset), ' - ', fmt_date('g:ia', bookings[i].end + timeOffset)");
 			showSubPage(dvTp, BTN_BOOKINGS, "SUBPAGE_BOOKING, itoa(i)");
 		} else {
