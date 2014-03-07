@@ -18,10 +18,12 @@ define_variable
 
 // This can be resized as required, just bare in mind each event slot is a
 // little piggy when it comes to memory.
-volatile Event todaysBookings[30];
+constant integer MAX_DAILY_BOOKINGS= 30;
 
 constant long DAILY_BOOKING_RESYNC_TL = 27532;
 constant long DAILY_BOOKING_RESYNC_INTERVAL[] = {300000};
+
+volatile Event todaysBookings[MAX_DAILY_BOOKINGS];
 
 
 /**
