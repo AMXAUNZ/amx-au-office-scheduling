@@ -333,13 +333,16 @@ define_function updateAttendees(char attendees[][]) {
 		updateRequired = true;
 	} else {
 		for (i = length_array(attendees); i; i--) {
-			if (attendees[] != lastUpdate[i]) {
+			if (attendees[i] != lastUpdate[i]) {
 				updateRequired = true;
 			}
 		}
 	}
 	
-	lastUpdate = attendees;
+	for (i = length_array(attendees); i; i--) {
+		lastUpdate[i] = attendees[i];
+	}
+	set_length_array(lastUpdate, length_array(attendees));
 	
 	if (!updateRequired) {
 		return;

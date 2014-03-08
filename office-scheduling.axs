@@ -27,3 +27,5 @@ define_module 'SchedulingUI' mdlTrainingUi(vdvRms, dvTPTraining);
 // it is online.
 define_module 'RmsTouchPanelMonitor' mdlRmsMeetingTp(vdvRMS, dvTPMeeting);
 define_module 'SchedulingUI' mdlMeetingUi(vdvRms, dvTPMeeting);
+
+define_module 'RmsSchedulingEventLogger' mdlRmsLogger(vdvRms);
