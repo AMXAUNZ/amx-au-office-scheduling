@@ -3,6 +3,8 @@ PROGRAM_NAME='DailyBookingTracker'
 
 #DEFINE INCLUDE_SCHEDULING_EVENT_UPDATED_CALLBACK
 #DEFINE INCLUDE_SCHEDULING_BOOKINGS_RECORD_RESPONSE_CALLBACK
+#DEFINE INCLUDE_RMS_EVENT_CLIENT_REGISTERED_CALLBACK
+#DEFINE INCLUDE_RMS_EVENT_CLIENT_OFFLINE_CALLBACK
 
 
 #INCLUDE 'Unixtime';
@@ -253,6 +255,22 @@ define_function RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
 	}
 }
 
+define_function RmsEventClientRegistered() {
+	timeline_create(DAILY_BOOKING_RESYNC_TL,
+		DAILY_BOOKING_RESYNC_INTERVAL,
+		1,
+		TIMELINE_RELATIVE,
+		TIMELINE_REPEAT);
+
+	cancel_wait 'daily booking initial sync';
+	wait 100 'daily booking initial sync'{
+		resyncDailyBookings();
+	}
+}
+
+define_function RmsEventClientOffline() {
+	timeline_kill(DAILY_BOOKING_RESYNC_TL);
+}
 
 define_start
 
@@ -260,29 +278,6 @@ clearBookingList(todaysBookings);
 
 
 define_event
-
-channel_event[vdvRMS, RMS_CHANNEL_CLIENT_REGISTERED] {
-
-	on: {
-		timeline_create(DAILY_BOOKING_RESYNC_TL,
-				DAILY_BOOKING_RESYNC_INTERVAL,
-				1,
-				TIMELINE_RELATIVE,
-				TIMELINE_REPEAT);
-
-		cancel_wait 'daily booking initial sync';
-		wait 100 'daily booking initial sync'{
-			resyncDailyBookings();
-		}
-	}
-
-	off: {
-		if (timeline_active(DAILY_BOOKING_RESYNC_TL)) {
-			timeline_kill(DAILY_BOOKING_RESYNC_TL);
-		}
-	}
-
-}
 
 timeline_event[DAILY_BOOKING_RESYNC_TL] {
 	resyncDailyBookings();
