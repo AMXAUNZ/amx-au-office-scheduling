@@ -174,7 +174,7 @@ define_function redraw() {
 	// Throttle UI renders to 100ms
 	cancel_wait 'ui update';
 	wait 1 'ui update' {
-		if (device_id(dvTp)) {
+		if (isDeviceOnline(dvTp)) {
 			render(getState());
 		}
 	}
@@ -192,11 +192,6 @@ define_function render(char state) {
 	stack_var event next;
 	stack_var slong timeNow;
 	stack_var slong timeOffset;
-	
-	// Don't both attempting to render anything if the panel isn't there.
-	if (!isDeviceOnline(dvTp)) {
-		return;
-	}
 
 	on[dvTp, BTN_ONLINE_INDICATOR];
 
