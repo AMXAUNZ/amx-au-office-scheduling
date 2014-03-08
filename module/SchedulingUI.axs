@@ -10,6 +10,7 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #INCLUDE 'String';
 #INCLUDE 'Unixtime';
 #INCLUDE 'TimeUtil';
+#INCLUDE 'DeviceUtil';
 #INCLUDE 'ProfileImageManager';
 #INCLUDE 'RmsAssetLocationTracker';
 #INCLUDE 'RmsRapidUpdater';
@@ -191,6 +192,11 @@ define_function render(char state) {
 	stack_var event next;
 	stack_var slong timeNow;
 	stack_var slong timeOffset;
+	
+	// Don't both attempting to render anything if the panel isn't there.
+	if (!isDeviceOnline(dvTp)) {
+		return;
+	}
 
 	on[dvTp, BTN_ONLINE_INDICATOR];
 
@@ -612,7 +618,7 @@ timeline_event[UI_UPDATE_TL] {
 
 button_event[dvTp, BTN_MEET_NOW] {
 
-	push :{
+	push: {
 		updateAvailableBookingTimes()
 		setDefaultBookingLength();
 		showPopup(dvTp, POPUP_CREATE);
