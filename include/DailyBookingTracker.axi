@@ -41,13 +41,16 @@ define_function char bookingHasTemporaryId(Event e) {
 	// dash, the event start timestamp, another dash and the end timestamp.
 	// Additionally in a create response the ID appears to just contain a two
 	// digit number followed by a dash.
+	
+	tempId = "itoa(e.start), '-', itoa(e.end)";
+	
 	select {
-		active(right_string(e.externalId, length_string(tempId)) == tempId): {
-			return true;
-		}
-
 		active (length_string(e.externalId) == 3 &&
 				right_string(e.externalId, 1) == '-'): {
+			return true;
+		}
+	
+		active(right_string(e.externalId, length_string(tempId)) == tempId): {
 			return true;
 		}
 
@@ -213,6 +216,8 @@ define_function integer getMinutesUntilBookingEnd() {
 			UNIXTIME_SECONDS_PER_MINUTE));
 }
 
+// We're already listing to RmsEventSchedulingCreateResponse within the this
+// scope - this is simply called within the other user of it.
 define_function bookingTrackerHandleCreateResponse(RmsEventBookingResponse response) {
 	if (response.isSuccessful &&
 			response.location == locationTracker.location.id &&
