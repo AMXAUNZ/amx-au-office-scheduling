@@ -3,8 +3,6 @@ PROGRAM_NAME='DailyBookingTracker'
 
 #DEFINE INCLUDE_SCHEDULING_EVENT_UPDATED_CALLBACK
 #DEFINE INCLUDE_SCHEDULING_BOOKINGS_RECORD_RESPONSE_CALLBACK
-#DEFINE INCLUDE_RMS_EVENT_CLIENT_REGISTERED_CALLBACK
-#DEFINE INCLUDE_RMS_EVENT_CLIENT_OFFLINE_CALLBACK
 
 
 #INCLUDE 'Unixtime';
@@ -43,15 +41,15 @@ define_function char bookingHasTemporaryId(Event e) {
 	// dash, the event start timestamp, another dash and the end timestamp.
 	// Additionally in a create response the ID appears to just contain a two
 	// digit number followed by a dash.
-	
+
 	tempId = "itoa(e.start), '-', itoa(e.end)";
-	
+
 	select {
 		active (length_string(e.externalId) == 3 &&
 				right_string(e.externalId, 1) == '-'): {
 			return true;
 		}
-	
+
 		active(right_string(e.externalId, length_string(tempId)) == tempId): {
 			return true;
 		}
@@ -142,17 +140,7 @@ define_function storeRmsBookingResponse(RmsEventBookingResponse booking,
  * Note: this is purely a RMS module -> NetLinx resync, not a server action.
  */
 define_function resyncDailyBookings() {
-	clearBookingList(todaysBookings);
 	RmsBookingsRequest(ldate, locationTracker.location.id);
-
-	// Ideally this should be called from
-	// RmsEventSchedulingBookingsRecordResponse(..) when it's the last record
-	// however as of SDK v4.1.16 this appears to be broken and containes the
-	// same value as recordIndex for every call.
-	cancel_wait 'post daily booking resync redraw';
-	wait 50 'post daily booking resync redraw'{
-		redraw();
-	}
 }
 
 /**
@@ -249,35 +237,54 @@ define_function RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
 	// As of SDK v4.1.16 this appears to fire if there are no bookings for the
 	// day, albiet with a recordCount of 0
 	if (eventBookingResponse.location == locationTracker.location.id &&
-			eventBookingResponse.startDate == ldate &&
-			recordCount > 0) {
-		storeRmsBookingResponse(eventBookingResponse, todaysBookings);
+			eventBookingResponse.startDate == ldate) {
+		local_var Event incomingBookings[MAX_DAILY_BOOKINGS];
+		
+		// Buffer up incoming bookings
+		if (recordCount > 0) {
+			stack_var Event e;
+			
+			rmsBookingResponseToEvent(eventBookingResponse, e);
+			incomingBookings[recordIndex] = e;
+		}
+		
+		if (recordIndex == recordCount) {
+			set_length_array(incomingBookings, recordCount);
+		}
+		
+		// Copy everything across to our main bookings array if we're done.
+		// As of SDK v4.1.17 there appears to be a bug that caused recordIndex
+		// to take the same value as recordCount. As a workaround we can use the
+		// behaviour of named waits to perform this action after this method
+		// hasn't been entered for 500ms.
+		cancel_wait 'daily booking resysnc redraw';
+		wait 5 'daily booking resysnc redraw'{
+			todaysBookings = incomingBookings;
+			redraw();
+		}
 	}
 }
-
-define_function RmsEventClientRegistered() {
-	timeline_create(DAILY_BOOKING_RESYNC_TL,
-		DAILY_BOOKING_RESYNC_INTERVAL,
-		1,
-		TIMELINE_RELATIVE,
-		TIMELINE_REPEAT);
-
-	cancel_wait 'daily booking initial sync';
-	wait 100 'daily booking initial sync'{
-		resyncDailyBookings();
-	}
-}
-
-define_function RmsEventClientOffline() {
-	timeline_kill(DAILY_BOOKING_RESYNC_TL);
-}
-
-define_start
-
-clearBookingList(todaysBookings);
 
 
 define_event
+
+channel_event[vdvRMS, RMS_CHANNEL_CLIENT_REGISTERED] {
+
+	on: {
+		timeline_create(DAILY_BOOKING_RESYNC_TL,
+			DAILY_BOOKING_RESYNC_INTERVAL,
+			1,
+			TIMELINE_RELATIVE,
+			TIMELINE_REPEAT);
+
+		resyncDailyBookings();
+	}
+	
+	off: {
+		timeline_kill(DAILY_BOOKING_RESYNC_TL);
+	}
+
+}
 
 timeline_event[DAILY_BOOKING_RESYNC_TL] {
 	resyncDailyBookings();
