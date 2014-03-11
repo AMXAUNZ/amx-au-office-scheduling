@@ -10,6 +10,7 @@ MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
 #INCLUDE 'String';
 #INCLUDE 'Unixtime';
 #INCLUDE 'TimeUtil';
+#INCLUDE 'DeviceUtil';
 #INCLUDE 'ProfileImageManager';
 #INCLUDE 'RmsAssetLocationTracker';
 #INCLUDE 'RmsRapidUpdater';
@@ -173,7 +174,7 @@ define_function redraw() {
 	// Throttle UI renders to 100ms
 	cancel_wait 'ui update';
 	wait 1 'ui update' {
-		if (device_id(dvTp)) {
+		if (isDeviceOnline(dvTp)) {
 			render(getState());
 		}
 	}
@@ -332,13 +333,16 @@ define_function updateAttendees(char attendees[][]) {
 		updateRequired = true;
 	} else {
 		for (i = length_array(attendees); i; i--) {
-			if (attendees[] != lastUpdate[i]) {
+			if (attendees[i] != lastUpdate[i]) {
 				updateRequired = true;
 			}
 		}
 	}
 	
-	lastUpdate = attendees;
+	for (i = length_array(attendees); i; i--) {
+		lastUpdate[i] = attendees[i];
+	}
+	set_length_array(lastUpdate, length_array(attendees));
 	
 	if (!updateRequired) {
 		return;
@@ -612,7 +616,7 @@ timeline_event[UI_UPDATE_TL] {
 
 button_event[dvTp, BTN_MEET_NOW] {
 
-	push :{
+	push: {
 		updateAvailableBookingTimes()
 		setDefaultBookingLength();
 		showPopup(dvTp, POPUP_CREATE);

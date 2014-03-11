@@ -151,14 +151,5 @@ define_function insertBooking(Event booking, Event bookingList[]) {
 	set_length_array(bookingList, length_array(bookingList) + 1);
 }
 
-/**
- * Clears an array of Events.
- *
- * @param	bookingList	the array to clear
- */
-define_function clearBookingList(Event bookingList[]) {
-	set_length_array(bookingList, 0);
-}
-
 
 #END_IF // __BOOKING_MANAGER__
