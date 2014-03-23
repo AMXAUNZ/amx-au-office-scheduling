@@ -218,6 +218,10 @@
 <FilePathName>lib\tp\TpEventListener.axi</FilePathName>
 <Comments></Comments>
 </File>
+<File CompileType="None" Type="DUET"><Identifier>MD5Calculator_dr1_0_0</Identifier>
+<FilePathName>module\MD5Calculator_dr1_0_0.jar</FilePathName>
+<Comments></Comments>
+</File>
 <File CompileType="Netlinx" Type="Module"><Identifier>SchedulingUI</Identifier>
 <FilePathName>module\SchedulingUI.axs</FilePathName>
 <Comments></Comments>

@@ -19,14 +19,16 @@ define_module
 
 'RmsControlSystemMonitor' mdlRmsControlSys(vdvRms, dvMaster);
 
+'MD5Calculator_dr1_0_0' mdlMD5(vdvMD5Util, dvMaster);
+
 'RmsTouchPanelMonitor' mdlRmsBoardroomTp(vdvRMS, dvTPBoardroom);
-'SchedulingUI' mdlBoardroomUi(vdvRms, dvTPBoardroom);
+'SchedulingUI' mdlBoardroomUi(vdvRms, dvTPBoardroom, vdvMD5Util);
 
 'RmsTouchPanelMonitor' mdlRmsTrainingTp(vdvRMS, dvTPTraining);
-'SchedulingUI' mdlTrainingUi(vdvRms, dvTPTraining);
+'SchedulingUI' mdlTrainingUi(vdvRms, dvTPTraining, vdvMD5Util);
 
 // The additional meeting room panel does not exist in every office however no
 // harm in instantiating this. The RMS monitor will not register a device unless
 // it is online.
 'RmsTouchPanelMonitor' mdlRmsMeetingTp(vdvRMS, dvTPMeeting);
-'SchedulingUI' mdlMeetingUi(vdvRms, dvTPMeeting);
+'SchedulingUI' mdlMeetingUi(vdvRms, dvTPMeeting, vdvMD5Util);

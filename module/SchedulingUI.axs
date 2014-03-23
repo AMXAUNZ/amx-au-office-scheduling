@@ -1,4 +1,4 @@
-MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp)
+MODULE_NAME='SchedulingUI' (dev vdvRms, dev dvTp, dev vdvMd5Util)
 
 
 #DEFINE INCLUDE_SCHEDULING_CREATE_RESPONSE_CALLBACK
@@ -282,6 +282,8 @@ define_function render(char state) {
 
 		setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
 
+		clearAttendees();
+
 		break;
 	}
 
@@ -293,6 +295,8 @@ define_function render(char state) {
 		showPopupEx(dvTp, POPUP_BACK_TO_BACK, PAGE_IN_USE);
 
 		setPageAnimated(dvTp, PAGE_IN_USE, 'fade', 0, 20);
+
+		clearAttendees();
 
 		break;
 	}
@@ -324,36 +328,15 @@ define_function clearAttendees() {
  */
 define_function updateAttendees(char attendees[][]) {
 	stack_var integer i;
-	stack_var char updateRequired;
-	local_var char lastUpdate[BOOKING_MAX_ATTENDEES][MAX_ATTENDEE_NAME_LENGTH];
-	
-	if (length_array(attendees) = 0) {
-		updateRequired = true;
-	} else if (length_array(attendees) != length_array(lastUpdate)) {
-		updateRequired = true;
-	} else {
-		for (i = length_array(attendees); i; i--) {
-			if (attendees[i] != lastUpdate[i]) {
-				updateRequired = true;
-			}
-		}
-	}
-	
-	for (i = length_array(attendees); i; i--) {
-		lastUpdate[i] = attendees[i];
-	}
-	set_length_array(lastUpdate, length_array(attendees));
-	
-	if (!updateRequired) {
-		return;
-	}
-	
-	clearAttendees();
 
-	for (i = length_array(attendees); i; i--) {
-		loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
-		setButtonText(dvTp, BTN_ATTENDEE_NAME[i], string_truncate(attendees[i], MAX_ATTENDEE_NAME_LENGTH));
-		showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
+	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
+		if (attendees[i] != '') {
+			loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
+			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], string_truncate(attendees[i], MAX_ATTENDEE_NAME_LENGTH));
+			showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
+		} else {
+			hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
+		}
 	}
 }
 
@@ -393,13 +376,13 @@ define_function updateBookingList(Event bookings[]) {
 			}
 		}
 	}
-	
+
 	lastUpdate = bookings;
-	
+
 	if (!updateRequired) {
 		return;
 	}
-	
+
 	clearUIBookingList();
 
 	timeOffset = getTimeOffset();
