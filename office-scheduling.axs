@@ -31,4 +31,4 @@ define_module
 // harm in instantiating this. The RMS monitor will not register a device unless
 // it is online.
 'RmsTouchPanelMonitor' mdlRmsMeetingTp(vdvRMS, dvTPMeeting);
-'SchedulingUI' mdlMeetingUi(vdvRms, dvTPMeeting, vdvMD5Util);
+//'SchedulingUI' mdlMeetingUi(vdvRms, dvTPMeeting, vdvMD5Util);
