@@ -33,7 +33,7 @@ define_function loadProfileImage(dev tp, char resource[], char email[]) {
 	// we can parse out the responses for this instance in the response.
 	prefix = "itoa(dvTp.number), '::', resource";
 
-	send_command vdvMd5Util, "'md5-', prefix, ',', email";
+	send_command vdvMd5Util, "'md5-', prefix, ',', lower_string(email)";
 }
 
 

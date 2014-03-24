@@ -112,10 +112,10 @@ define_function rmsBookingResponseToEvent(RmsEventBookingResponse booking,
 			// happen.
 			if (find_string(tmp[i], '@', 1)) {
 				e.attendees[i].name = string_replace(string_get_key(tmp[i], '@'), '.', ' ');
-				e.attendees[i].email = tmp[i];
+				e.attendees[i].email = lower_string(tmp[i]);
 			} else {
 				e.attendees[i].name = tmp[i];
-				e.attendees[i].email = "string_replace(tmp[i], ' ', '.'), '@amxaustralia.com.au'";
+				e.attendees[i].email = lower_string("string_replace(tmp[i], ' ', '.'), '@amxaustralia.com.au'");
 			}
 		}
 	}
