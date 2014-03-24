@@ -96,7 +96,28 @@ define_function rmsBookingResponseToEvent(RmsEventBookingResponse booking,
 		e.onBehalfOf = booking.onBehalfOf;
 	}
 	if (booking.attendees != 'N/A') {
-		explode('|', booking.attendees, e.attendees, 0);
+		stack_var char tmp[BOOKING_MAX_ATTENDEES][BOOKING_MAX_EMAIL_LENGTH];
+		stack_var integer i;
+		
+		explode('|', booking.attendees, tmp, 0);
+		
+		for (i = BOOKING_MAX_ATTENDEES; i; i--) {
+			// This is really, really nasty bad and horrible email address
+			// matching. If you're using this you may want to do something a
+			// little nicer here. Basically if this is an email address we'll
+			// leave it as it is, otherwise, we'll (poorly) assume that this is
+			// an AMX'er. This *really* needs to be neatend up when we have
+			// time. Ideally we would have both a name and email returned from
+			// RMS for each attendee, however as of SDK v4.1.17 this does not
+			// happen.
+			if (find_string(tmp[i], '@', 1)) {
+				e.attendees[i].name = string_replace(string_get_key(tmp[i], '@'), '.', ' ');
+				e.attendees[i].email = tmp[i];
+			} else {
+				e.attendees[i].name = tmp[i];
+				e.attendees[i].email = "string_replace(tmp[i], ' ', '.'), '@amxaustralia.com.au'";
+			}
+		}
 	}
 }
 
@@ -239,19 +260,19 @@ define_function RmsEventSchedulingBookingsRecordResponse(CHAR isDefaultLocation,
 	if (eventBookingResponse.location == locationTracker.location.id &&
 			eventBookingResponse.startDate == ldate) {
 		local_var Event incomingBookings[MAX_DAILY_BOOKINGS];
-		
+
 		// Buffer up incoming bookings
 		if (recordCount > 0) {
 			stack_var Event e;
-			
+
 			rmsBookingResponseToEvent(eventBookingResponse, e);
 			incomingBookings[recordIndex] = e;
 		}
-		
+
 		if (recordIndex == recordCount) {
 			set_length_array(incomingBookings, recordCount);
 		}
-		
+
 		// Copy everything across to our main bookings array if we're done.
 		// As of SDK v4.1.17 there appears to be a bug that caused recordIndex
 		// to take the same value as recordCount. As a workaround we can use the
@@ -279,7 +300,7 @@ channel_event[vdvRMS, RMS_CHANNEL_CLIENT_REGISTERED] {
 
 		resyncDailyBookings();
 	}
-	
+
 	off: {
 		timeline_kill(DAILY_BOOKING_RESYNC_TL);
 	}

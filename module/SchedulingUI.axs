@@ -326,13 +326,13 @@ define_function clearAttendees() {
  *
  * @param	attendees		an array of attendee names
  */
-define_function updateAttendees(char attendees[][]) {
+define_function updateAttendees(EventAttendee attendees[]) {
 	stack_var integer i;
 
 	for (i = max_length_array(BTN_ATTENDEE_NAME); i; i--) {
-		if (attendees[i] != '') {
-			loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i]);
-			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], string_truncate(attendees[i], MAX_ATTENDEE_NAME_LENGTH));
+		if (attendees[i].name != '') {
+			loadProfileImage(dvTp, "DYN_ATTENDEE_PREFIX, itoa(i)", attendees[i].email);
+			setButtonText(dvTp, BTN_ATTENDEE_NAME[i], string_truncate(attendees[i].name, MAX_ATTENDEE_NAME_LENGTH));
 			showSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");
 		} else {
 			hideSubPage(dvTp, BTN_ATTENDEES, "SUBPAGE_ATTENDEE, itoa(i)");

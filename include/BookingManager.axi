@@ -10,23 +10,29 @@ define_constant
 integer BOOKING_MAX_ID_LENGTH = 255;
 integer BOOKING_MAX_SUBJECT_LENGTH = 255;
 integer BOOKING_MAX_DETAILS_LENGTH = 255;
-integer BOOKING_MAX_NAME_LENGTH = 128;
+integer BOOKING_MAX_NAME_LENGTH = 64;
+integer BOOKING_MAX_EMAIL_LENGTH = 128;
 integer BOOKING_MAX_ATTENDEES = 10;
 
 
 define_type
 
+structure EventAttendee {
+	char name[BOOKING_MAX_NAME_LENGTH];
+	char email[BOOKING_MAX_EMAIL_LENGTH];
+}
+
 structure Event {
 	char externalId[BOOKING_MAX_ID_LENGTH];
-	SLONG start;
-	SLONG end;
-    CHAR subject[BOOKING_MAX_SUBJECT_LENGTH];
-    CHAR details[BOOKING_MAX_DETAILS_LENGTH];
-    CHAR isPrivate;
-    CHAR isAllDay;
-    CHAR organizer[BOOKING_MAX_NAME_LENGTH];
-    CHAR onBehalfOf[BOOKING_MAX_NAME_LENGTH];
-    CHAR attendees[BOOKING_MAX_ATTENDEES][BOOKING_MAX_NAME_LENGTH];
+	slong start;
+	slong end;
+	char subject[BOOKING_MAX_SUBJECT_LENGTH];
+    char details[BOOKING_MAX_DETAILS_LENGTH];
+    char isPrivate;
+    char isAllDay;
+    char organizer[BOOKING_MAX_NAME_LENGTH];
+    char onBehalfOf[BOOKING_MAX_NAME_LENGTH];
+    EventAttendee attendees[BOOKING_MAX_ATTENDEES];
 }
 
 /**
